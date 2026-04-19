@@ -71,6 +71,10 @@ final class PlayerModel {
     private var timeObserver: Any?
     private var interruptionObserver: NSObjectProtocol?
 
+    // Background task used while paused to reduce the chance of the app being
+    // evicted from the system "Now Playing" slot during short pauses.
+    private var pauseBackgroundTask: UIBackgroundTaskIdentifier = .invalid
+
     // Security-scoped access:
     // - Keep the selected folder/file open while the app runs.
     // - Also keep the currently playing file open (some providers require per-file access).
@@ -86,6 +90,7 @@ final class PlayerModel {
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         if let timeObserver, let player { player.removeTimeObserver(timeObserver) }
         if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
+        endBackgroundTask()
         stopAllSecurityScope()
     }
 
@@ -145,6 +150,9 @@ final class PlayerModel {
     }
 
     func play() {
+        // Release any pause background task claim immediately on resume.
+        endBackgroundTask()
+
         guard !tracks.isEmpty else { return }
         if player == nil { prepareToPlay(index: currentIndex, autoplay: false) }
 
@@ -167,8 +175,21 @@ final class PlayerModel {
         player?.pause()
         isPlaying = false
 
+        // Hold a background task while paused so the process is less likely to be
+        // evicted from the system's "Now Playing" slot during short pauses.
+        endBackgroundTask()
+        pauseBackgroundTask = UIApplication.shared.beginBackgroundTask(withName: "LoopPlayerPausedNowPlaying") { [weak self] in
+            self?.endBackgroundTask()
+        }
+
         // CRUCIAL: keep Now Playing metadata, but mark paused + playbackRate = 0.0
         updateNowPlayingInfo(isPaused: true)
+    }
+
+    private func endBackgroundTask() {
+        guard pauseBackgroundTask != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(pauseBackgroundTask)
+        pauseBackgroundTask = .invalid
     }
 
     func nextTrack() {
