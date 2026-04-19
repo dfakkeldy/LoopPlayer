@@ -1,6 +1,0 @@
-# Xcode
-build/
-DerivedData/
-*.swp
-*.xcuserstate
-project.xcworkspace/xcuserdata/
