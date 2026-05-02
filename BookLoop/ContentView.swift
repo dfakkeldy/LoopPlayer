@@ -119,7 +119,18 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                 case "next": self.nextTrack()
                 case "previous": self.previousTrackOrRestart()
                 case "skipBackward": self.skipBackward30()
+                case "toggle": self.togglePlayPause()
                 default: break
+                }
+            }
+        }
+    }
+    
+    func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
+        DispatchQueue.main.async {
+            if let command = applicationContext["command"] as? String {
+                if command == "toggle" {
+                    self.togglePlayPause()
                 }
             }
         }
@@ -130,6 +141,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         
         var context: [String: Any] = [:]
         context["isPlaying"] = isPlaying
+        context["progressFraction"] = progressFraction
         
         let title = chapters.count >= 2 ? (currentSubtitle.isEmpty ? "Chapter \((currentChapterIndex ?? 0) + 1)" : currentSubtitle) : currentTitle
         context["title"] = title
@@ -883,12 +895,14 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             let chapterElapsed = elapsed - c.startSeconds
             
             if chapterElapsed.isFinite, chapterDuration.isFinite, chapterDuration > 0 {
-                let frac = min(1, max(0, chapterElapsed / chapterDuration))
-                progressFraction = frac
-                let remaining = max(0, chapterDuration - chapterElapsed) / Double(speed)
-                progressText = "-\(formatTime(remaining))"
-                elapsedText = formatTime(max(0, chapterElapsed) / Double(speed))
-                return
+        let frac = min(1, max(0, chapterElapsed / chapterDuration))
+        let didChange = abs(progressFraction - frac) > 0.005
+        progressFraction = frac
+        let remaining = max(0, chapterDuration - chapterElapsed) / Double(speed)
+        progressText = "-\(formatTime(remaining))"
+        elapsedText = formatTime(max(0, chapterElapsed) / Double(speed))
+        if didChange { syncToWatch() }
+        return
             }
         }
 
@@ -902,11 +916,13 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         }
 
         let frac = min(1, max(0, elapsed / duration))
+        let didChange = abs(progressFraction - frac) > 0.005
         progressFraction = frac
 
         let remaining = max(0, duration - elapsed) / Double(speed)
         progressText = "-\(formatTime(remaining))"
         elapsedText = formatTime(max(0, elapsed) / Double(speed))
+        if didChange { syncToWatch() }
     }
 
     private func formatTime(_ seconds: Double) -> String {

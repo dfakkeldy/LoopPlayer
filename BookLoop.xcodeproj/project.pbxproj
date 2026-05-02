@@ -7,10 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CC00BC502FA6B66400323F38 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC00BC4F2FA6B66400323F38 /* WidgetKit.framework */; };
+		CC00BC522FA6B66400323F38 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC00BC512FA6B66400323F38 /* SwiftUI.framework */; };
+		CC00BC612FA6B66500323F38 /* BookLoop WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CCC48EBB2FA6AB350003458B /* BookLoop Watch App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CCC48E9B2FA6AB330003458B /* BookLoop Watch App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		CC00BC5F2FA6B66500323F38 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CC00BC4C2FA6B66400323F38;
+			remoteInfo = "BookLoop WidgetExtension";
+		};
 		CC08EC672F9522F800206D2F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
@@ -49,6 +59,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		CC00BC622FA6B66500323F38 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CC00BC612FA6B66500323F38 /* BookLoop WidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CCC48E8D2FA6AAC30003458B /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -63,6 +84,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "BookLoop WidgetExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC00BC4F2FA6B66400323F38 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		CC00BC512FA6B66400323F38 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		CC08EC592F9522F600206D2F /* BookLoop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookLoop.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC08EC662F9522F800206D2F /* BookLoopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookLoopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC08EC702F9522F800206D2F /* BookLoopUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookLoopUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -72,6 +96,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CC00BC662FA6B66500323F38 /* Exceptions for "BookLoop Widget" folder in "BookLoop WidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */;
+		};
 		CC08EC842F95256B00206D2F /* Exceptions for "BookLoop" folder in "BookLoop" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -82,6 +113,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		CC00BC532FA6B66400323F38 /* BookLoop Widget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CC00BC662FA6B66500323F38 /* Exceptions for "BookLoop Widget" folder in "BookLoop WidgetExtension" target */,
+			);
+			path = "BookLoop Widget";
+			sourceTree = "<group>";
+		};
 		CC08EC5B2F9522F600206D2F /* BookLoop */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -118,6 +157,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		CC00BC4A2FA6B66400323F38 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CC00BC522FA6B66400323F38 /* SwiftUI.framework in Frameworks */,
+				CC00BC502FA6B66400323F38 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CC08EC562F9522F600206D2F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -163,6 +211,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		CC00BC4E2FA6B66400323F38 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CC00BC4F2FA6B66400323F38 /* WidgetKit.framework */,
+				CC00BC512FA6B66400323F38 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		CC08EC502F9522F600206D2F = {
 			isa = PBXGroup;
 			children = (
@@ -172,6 +229,8 @@
 				CCC48E9C2FA6AB330003458B /* BookLoop Watch App Watch App */,
 				CCC48EAA2FA6AB340003458B /* BookLoop Watch App Watch AppTests */,
 				CCC48EB42FA6AB340003458B /* BookLoop Watch App Watch AppUITests */,
+				CC00BC532FA6B66400323F38 /* BookLoop Widget */,
+				CC00BC4E2FA6B66400323F38 /* Frameworks */,
 				CC08EC5A2F9522F600206D2F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -185,6 +244,7 @@
 				CCC48E9B2FA6AB330003458B /* BookLoop Watch App Watch App.app */,
 				CCC48EA72FA6AB340003458B /* BookLoop Watch App Watch AppTests.xctest */,
 				CCC48EB12FA6AB340003458B /* BookLoop Watch App Watch AppUITests.xctest */,
+				CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -192,6 +252,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC00BC652FA6B66500323F38 /* Build configuration list for PBXNativeTarget "BookLoop WidgetExtension" */;
+			buildPhases = (
+				CC00BC492FA6B66400323F38 /* Sources */,
+				CC00BC4A2FA6B66400323F38 /* Frameworks */,
+				CC00BC4B2FA6B66400323F38 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CC00BC532FA6B66400323F38 /* BookLoop Widget */,
+			);
+			name = "BookLoop WidgetExtension";
+			packageProductDependencies = (
+			);
+			productName = "BookLoop WidgetExtension";
+			productReference = CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		CC08EC582F9522F600206D2F /* BookLoop */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CC08EC7A2F9522F800206D2F /* Build configuration list for PBXNativeTarget "BookLoop" */;
@@ -269,10 +351,12 @@
 				CCC48E972FA6AB330003458B /* Sources */,
 				CCC48E982FA6AB330003458B /* Frameworks */,
 				CCC48E992FA6AB330003458B /* Resources */,
+				CC00BC622FA6B66500323F38 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CC00BC602FA6B66500323F38 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				CCC48E9C2FA6AB330003458B /* BookLoop Watch App Watch App */,
@@ -340,6 +424,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					CC00BC4C2FA6B66400323F38 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
 					CC08EC582F9522F600206D2F = {
 						CreatedOnToolsVersion = 26.4.1;
 					};
@@ -384,11 +471,19 @@
 				CCC48E9A2FA6AB330003458B /* BookLoop Watch App Watch App */,
 				CCC48EA62FA6AB340003458B /* BookLoop Watch App Watch AppTests */,
 				CCC48EB02FA6AB340003458B /* BookLoop Watch App Watch AppUITests */,
+				CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		CC00BC4B2FA6B66400323F38 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CC08EC572F9522F600206D2F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -434,6 +529,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		CC00BC492FA6B66400323F38 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CC08EC552F9522F600206D2F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -479,6 +581,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		CC00BC602FA6B66500323F38 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */;
+			targetProxy = CC00BC5F2FA6B66500323F38 /* PBXContainerItemProxy */;
+		};
 		CC08EC682F9522F800206D2F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = CC08EC582F9522F600206D2F /* BookLoop */;
@@ -507,6 +614,73 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		CC00BC632FA6B66500323F38 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8AXNA5B37R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "BookLoop Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "BookLoop Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop.watchkitapp.BookLoop-Widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Debug;
+		};
+		CC00BC642FA6B66500323F38 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8AXNA5B37R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "BookLoop Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "BookLoop Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop.watchkitapp.BookLoop-Widget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Release;
+		};
 		CC08EC782F9522F800206D2F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -977,6 +1151,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		CC00BC652FA6B66500323F38 /* Build configuration list for PBXNativeTarget "BookLoop WidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CC00BC632FA6B66500323F38 /* Debug */,
+				CC00BC642FA6B66500323F38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CC08EC542F9522F600206D2F /* Build configuration list for PBXProject "BookLoop" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

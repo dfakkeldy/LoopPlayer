@@ -2,12 +2,14 @@ import SwiftUI
 import WatchConnectivity
 import WatchKit
 import Observation
+import WidgetKit
 
 @Observable
 class WatchViewModel: NSObject, WCSessionDelegate {
     var isPlaying: Bool = false
     var title: String = "No track"
     var thumbnailImage: UIImage? = nil
+    var progressFraction: Double = 0.0
     
     override init() {
         super.init()
@@ -22,18 +24,29 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
         DispatchQueue.main.async {
+            let defaults = UserDefaults(suiteName: "group.com.bookloop")
             if let isPlaying = applicationContext["isPlaying"] as? Bool {
                 self.isPlaying = isPlaying
+                defaults?.set(isPlaying, forKey: "isPlaying")
             }
             if let title = applicationContext["title"] as? String {
                 self.title = title
+                defaults?.set(title, forKey: "title")
             }
-            if let thumbnailData = applicationContext["thumbnailData"] as? Data,
-               let image = UIImage(data: thumbnailData) {
-                self.thumbnailImage = image
+            if let progressFraction = applicationContext["progressFraction"] as? Double {
+                self.progressFraction = progressFraction
+                defaults?.set(progressFraction, forKey: "progressFraction")
+            }
+            if let thumbnailData = applicationContext["thumbnailData"] as? Data {
+                defaults?.set(thumbnailData, forKey: "thumbnailData")
+                if let image = UIImage(data: thumbnailData) {
+                    self.thumbnailImage = image
+                }
             } else {
+                defaults?.removeObject(forKey: "thumbnailData")
                 self.thumbnailImage = nil
             }
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
     
@@ -115,15 +128,25 @@ struct ContentView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     
-                    Button {
-                        viewModel.sendCommand(viewModel.isPlaying ? "pause" : "play")
-                        viewModel.isPlaying.toggle()
-                    } label: {
-                        Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 38))
-                            .shadow(color: Color.white.opacity(0.3), radius: 5, x: 0, y: 0)
+                    ZStack {
+                        ProgressView(value: viewModel.progressFraction)
+                            .progressViewStyle(.circular)
+                            .tint(Color.accentColor)
+                            .scaleEffect(1.5) // Make it large enough to wrap the button
+                        
+                        Button {
+                            viewModel.sendCommand(viewModel.isPlaying ? "pause" : "play")
+                            viewModel.isPlaying.toggle()
+                        } label: {
+                            Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 24))
+                                .frame(width: 44, height: 44)
+                                .background(Color.black.opacity(0.5))
+                                .clipShape(Circle())
+                                .shadow(color: Color.white.opacity(0.3), radius: 5, x: 0, y: 0)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                     
                     Button {
                         viewModel.sendCommand("next")
