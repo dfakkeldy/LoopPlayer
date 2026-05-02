@@ -467,32 +467,44 @@ final class PlayerModel {
                 self?.updateNowPlayingElapsedTime()
                 self?.updateProgressFromPlayer()
                 self?.updateCurrentChapterFromPlayerTime()
+                self?.enforceEnabledState()
                 self?.applyChapterLoopIfNeeded()
+            }
+        }
+    }
+    
+    private func enforceEnabledState() {
+        guard !isManualSeeking else { return }
+        if chapters.count >= 2 {
+            if let idx = currentChapterIndex, !chapters[idx].isEnabled {
+                if let nextIdx = findNextEnabledChapterIndex(after: idx) {
+                    seekToChapter(at: nextIdx)
+                } else if loopModeOn, let firstIdx = findNextEnabledChapterIndex(after: -1) {
+                    seekToChapter(at: firstIdx)
+                } else {
+                    nextTrack()
+                }
+            }
+        } else {
+            if tracks.indices.contains(currentIndex), !tracks[currentIndex].isEnabled {
+                nextTrack()
             }
         }
     }
 
     private func handleTrackEnded() {
         guard let player else { return }
-        if loopModeOn {
-            if chapters.count >= 2, let idx = currentChapterIndex {
-                let c = chapters[idx]
-                player.seek(to: CMTime(seconds: c.startSeconds, preferredTimescale: 600)) { [weak self] _ in
-                    DispatchQueue.main.async {
-                        guard let self else { return }
-                        if self.isPlaying {
-                            self.applySpeedToCurrentItem()
-                            self.player?.play()
-                        } else {
-                            self.updateNowPlayingInfo(isPaused: true)
-                        }
-                        self.updateNowPlayingElapsedTime()
-                        self.updateProgressFromPlayer()
-                    }
-                }
-                return
+        
+        if chapters.count >= 2 {
+            if loopModeOn, let firstIdx = findNextEnabledChapterIndex(after: -1) {
+                seekToChapter(at: firstIdx)
+            } else {
+                nextTrack()
             }
+            return
+        }
 
+        if loopModeOn {
             player.seek(to: .zero) { [weak self] _ in
                 DispatchQueue.main.async {
                     guard let self else { return }
@@ -896,14 +908,12 @@ final class PlayerModel {
         let t = player.currentTime().seconds
         guard t.isFinite else { return }
 
-        // Find the last chapter where t >= startSeconds.
-        // This avoids matching the previous chapter when t is exactly on the boundary.
-        if let idx = chapters.lastIndex(where: { t >= $0.startSeconds }) {
+        if let idx = chapters.firstIndex(where: { t >= $0.startSeconds && t < $0.endSeconds }) {
             if currentChapterIndex != idx {
                 currentChapterIndex = idx
                 let c = chapters[idx]
                 if let title = c.title, !title.isEmpty {
-                    currentSubtitle = "Chapter \(idx + 1): \(title)"
+                    currentSubtitle = title
                 } else {
                     currentSubtitle = "Chapter \(idx + 1)"
                 }
@@ -914,7 +924,7 @@ final class PlayerModel {
 
     private func currentChapterForTime(_ t: Double) -> Chapter? {
         guard chapters.count >= 2 else { return nil }
-        return chapters.last(where: { t >= $0.startSeconds })
+        return chapters.first(where: { t >= $0.startSeconds && t < $0.endSeconds })
     }
 
     private func applyChapterLoopIfNeeded() {
@@ -929,36 +939,22 @@ final class PlayerModel {
         if t >= (c.endSeconds - 1.5) {
             isSeekingForChapterBoundary = true
             
-            if loopModeOn {
-                player.seek(to: CMTime(seconds: c.startSeconds, preferredTimescale: 600)) { [weak self] _ in
-                    DispatchQueue.main.async {
-                        guard let self else { return }
-                        self.isSeekingForChapterBoundary = false
-                        if self.isPlaying {
-                            self.applySpeedToCurrentItem()
-                            self.player?.play()
-                        } else {
-                            self.updateNowPlayingInfo(isPaused: true)
-                        }
-                        self.updateNowPlayingElapsedTime()
-                        self.updateProgressFromPlayer()
-                    }
+            if let nextIdx = findNextEnabledChapterIndex(after: idx) {
+                let nextC = chapters[nextIdx]
+                player.seek(to: CMTime(seconds: nextC.startSeconds, preferredTimescale: 600)) { [weak self] _ in
+                    self?.resumeAfterSeek()
                 }
             } else {
-                if let nextIdx = findNextEnabledChapterIndex(after: idx) {
-                    let nextC = chapters[nextIdx]
-                    player.seek(to: CMTime(seconds: nextC.startSeconds, preferredTimescale: 600)) { [weak self] _ in
-                        DispatchQueue.main.async {
-                            guard let self else { return }
-                            self.isSeekingForChapterBoundary = false
-                            if self.isPlaying {
-                                self.applySpeedToCurrentItem()
-                                self.player?.play()
-                            } else {
-                                self.updateNowPlayingInfo(isPaused: true)
-                            }
-                            self.updateNowPlayingElapsedTime()
-                            self.updateProgressFromPlayer()
+                if loopModeOn {
+                    if let firstIdx = findNextEnabledChapterIndex(after: -1) {
+                        let firstC = chapters[firstIdx]
+                        player.seek(to: CMTime(seconds: firstC.startSeconds, preferredTimescale: 600)) { [weak self] _ in
+                            self?.resumeAfterSeek()
+                        }
+                    } else {
+                        DispatchQueue.main.async { [weak self] in
+                            self?.isSeekingForChapterBoundary = false
+                            self?.nextTrack()
                         }
                     }
                 } else {
@@ -968,6 +964,21 @@ final class PlayerModel {
                     }
                 }
             }
+        }
+    }
+
+    private func resumeAfterSeek() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isSeekingForChapterBoundary = false
+            if self.isPlaying {
+                self.applySpeedToCurrentItem()
+                self.player?.play()
+            } else {
+                self.updateNowPlayingInfo(isPaused: true)
+            }
+            self.updateNowPlayingElapsedTime()
+            self.updateProgressFromPlayer()
         }
     }
 
