@@ -496,6 +496,69 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         updateNowPlayingElapsedTime()
     }
 
+    func skipForward30() {
+        guard let player else { return }
+        let current = player.currentTime().seconds
+        let duration = durationSeconds ?? 0
+        let target = min(duration, current + 30)
+        isManualSeeking = true
+        player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.isManualSeeking = false
+                self?.updateCurrentChapterFromPlayerTime()
+            }
+        }
+        updateNowPlayingElapsedTime()
+    }
+
+    func seek(toFraction fraction: Double) {
+        guard let player else { return }
+        
+        let safeFraction = min(1, max(0, fraction))
+        
+        if chapters.count >= 2, let idx = currentChapterIndex {
+            let c = chapters[idx]
+            let chapterDuration = c.endSeconds - c.startSeconds
+            if chapterDuration > 0 {
+                let targetSeconds = c.startSeconds + (chapterDuration * safeFraction)
+                
+                isManualSeeking = true
+                player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.isManualSeeking = false
+                        self?.updateCurrentChapterFromPlayerTime()
+                        self?.updateNowPlayingElapsedTime()
+                        self?.updateProgressFromPlayer()
+                        if self?.isPlaying == true {
+                            self?.player?.defaultRate = self?.speed ?? 1.0
+                            self?.player?.playImmediately(atRate: self?.speed ?? 1.0)
+                            self?.applySpeedToCurrentItem()
+                        }
+                    }
+                }
+            }
+        } else {
+            let duration = durationSeconds ?? 0
+            if duration > 0 {
+                let targetSeconds = duration * safeFraction
+                isManualSeeking = true
+                player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                    DispatchQueue.main.async {
+                        self?.isManualSeeking = false
+                        self?.updateCurrentChapterFromPlayerTime()
+                        self?.updateNowPlayingElapsedTime()
+                        self?.updateProgressFromPlayer()
+                        if self?.isPlaying == true {
+                            self?.player?.defaultRate = self?.speed ?? 1.0
+                            self?.player?.playImmediately(atRate: self?.speed ?? 1.0)
+                            self?.applySpeedToCurrentItem()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func setSpeed(_ newSpeed: Float) {
         speed = newSpeed
         persistence.saveSpeed(for: currentTitle, speed: speed)
@@ -1301,6 +1364,8 @@ struct ContentView: View {
     @State private var model = PlayerModel()
     @State private var showingFolderPicker = false
     @State private var showingPlaylist = false
+    @State private var isScrubbing = false
+    @State private var scrubFraction: Double = 0.0
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
@@ -1312,22 +1377,25 @@ struct ContentView: View {
                 if let image = model.thumbnailImage {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFill()
-                        .frame(width: 220, height: 220)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        .aspectRatio(contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
                                 .stroke(.quaternary, lineWidth: 1)
                         )
+                        .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 10)
+                        .padding(.horizontal, 16)
                 } else {
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(.quaternary)
-                        .frame(width: 220, height: 220)
+                        .aspectRatio(1, contentMode: .fit)
                         .overlay(
                             Image(systemName: "music.note")
-                                .font(.system(size: 44, weight: .semibold))
+                                .font(.system(size: 80, weight: .semibold))
                                 .foregroundStyle(.secondary)
                         )
+                        .shadow(color: .black.opacity(0.4), radius: 20, x: 0, y: 10)
+                        .padding(.horizontal, 16)
                 }
 
                 VStack(alignment: .center, spacing: 6) {
@@ -1348,15 +1416,32 @@ struct ContentView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
-                ProgressView(value: model.progressFraction)
-                    .frame(maxWidth: .infinity)
+                
+                Slider(
+                    value: Binding(
+                        get: { isScrubbing ? scrubFraction : model.progressFraction },
+                        set: { newValue in scrubFraction = newValue }
+                    ),
+                    in: 0...1,
+                    onEditingChanged: { editing in
+                        isScrubbing = editing
+                        if !editing {
+                            model.seek(toFraction: scrubFraction)
+                        }
+                    }
+                )
+                .frame(maxWidth: .infinity)
+                .tint(.primary)
+                
                 Text(model.progressText)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
 
-            HStack(spacing: 32) {
+            HStack {
+                Spacer()
+                
                 Button {
                     if model.chapters.count >= 2 {
                         model.previousChapterOrRestart()
@@ -1365,29 +1450,41 @@ struct ContentView: View {
                     }
                 } label: {
                     Image(systemName: "backward.end.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: 24, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                
+                Spacer()
 
                 Button {
                     model.skipBackward30()
                 } label: {
                     Image(systemName: "gobackward.30")
-                        .font(.system(size: 28))
+                        .font(.system(size: 28, weight: .regular))
                         .foregroundStyle(.primary)
                 }
+                
+                Spacer()
 
                 Button {
                     model.togglePlayPause()
                 } label: {
                     Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 40))
-                        .frame(width: 88, height: 88)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .font(.system(size: 44, weight: .bold))
                         .foregroundStyle(.primary)
                 }
+                
+                Spacer()
+                
+                Button {
+                    model.skipForward30()
+                } label: {
+                    Image(systemName: "goforward.30")
+                        .font(.system(size: 28, weight: .regular))
+                        .foregroundStyle(.primary)
+                }
+                
+                Spacer()
 
                 Button {
                     if model.chapters.count >= 2 {
@@ -1397,20 +1494,21 @@ struct ContentView: View {
                     }
                 } label: {
                     Image(systemName: "forward.end.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: 24, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
+                
+                Spacer()
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, 24)
 
-            if !model.tracks.isEmpty {
-                Text("Tracks: \(model.tracks.count)  •  Current: \(model.currentIndex + 1)")
+            if model.chapters.count >= 2 {
+                Text("Chapter \((model.currentChapterIndex ?? 0) + 1) of \(model.chapters.count)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-            }
-            if model.chapters.count >= 2 {
-                Text("Chapters: \(model.chapters.count)")
+            } else if !model.tracks.isEmpty {
+                Text("Track \(model.currentIndex + 1) of \(model.tracks.count)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -1421,24 +1519,24 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 Divider()
                 HStack {
-                Button {
-                    model.loopModeOn.toggle()
-                } label: {
+                    Button {
+                        model.loopModeOn.toggle()
+                    } label: {
                         Image(systemName: model.loopModeOn ? "infinity.circle.fill" : "infinity.circle")
                             .font(.title2)
                     }
                     
                     Spacer()
                     
-                Button {
-                    let speeds: [Float] = [1.0, 1.25, 1.5, 2.0, 10.0]
-                    if let index = speeds.firstIndex(of: model.speed) {
-                        let nextIndex = (index + 1) % speeds.count
-                        model.setSpeed(speeds[nextIndex])
-                    } else {
-                        model.setSpeed(1.0)
-                    }
-                } label: {
+                    Button {
+                        let speeds: [Float] = [1.0, 1.25, 1.5, 2.0, 10.0]
+                        if let index = speeds.firstIndex(of: model.speed) {
+                            let nextIndex = (index + 1) % speeds.count
+                            model.setSpeed(speeds[nextIndex])
+                        } else {
+                            model.setSpeed(1.0)
+                        }
+                    } label: {
                         Text(String(format: "%gx", model.speed))
                             .font(.headline)
                             .frame(minWidth: 44, minHeight: 44)
@@ -1465,6 +1563,8 @@ struct ContentView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 12)
             }
+            // Use native bar material for background to match HIG natively without the UIKit warning
+            .background(.bar)
         }
         .padding(.horizontal)
         .padding(.top)
