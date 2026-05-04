@@ -61,71 +61,22 @@ struct BookLoop_WidgetEntryView : View {
     var entry: Provider.Entry
 
     var body: some View {
-        switch family {
-        case .accessoryRectangular:
-            HStack(spacing: 8) {
-                if let data = entry.thumbnailData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 44, height: 44)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                } else {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 44, height: 44)
-                        .overlay(
-                            Image(systemName: "music.note")
-                                .font(.system(size: 20))
-                        )
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.title)
-                        .font(.headline)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                    
-                    Button(intent: TogglePlaybackIntent()) {
-                        HStack(spacing: 4) {
-                            Image(systemName: entry.isPlaying ? "pause.fill" : "play.fill")
-                            ProgressView(value: entry.progressFraction)
-                                .progressViewStyle(.linear)
-                                .tint(Color.accentColor)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
+        Gauge(value: entry.progressFraction) {
+            EmptyView()
+        } currentValueLabel: {
+            if let data = entry.thumbnailData, let uiImage = UIImage(data: data) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: "music.note")
             }
-            .containerBackground(.fill.tertiary, for: .widget)
-
-        case .accessoryCircular:
-            Gauge(value: entry.progressFraction) {
-                EmptyView()
-            } currentValueLabel: {
-                if let data = entry.thumbnailData, let uiImage = UIImage(data: data) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .clipShape(Circle())
-                } else {
-                    Image(systemName: "music.note")
-                }
-            }
-            .gaugeStyle(.accessoryCircular)
-            .tint(Color.accentColor)
-            .containerBackground(.fill.tertiary, for: .widget)
-            // Wrapping it in a Button allows us to trigger the intent
-            .overlay(
-                Button(intent: TogglePlaybackIntent()) {
-                    Color.clear
-                }.buttonStyle(.plain)
-            )
-
-        default:
-            Text(entry.title)
-                .containerBackground(.fill.tertiary, for: .widget)
         }
+        .gaugeStyle(.accessoryCircular)
+        .tint(.green)
+        .containerBackground(.fill.tertiary, for: .widget)
+        .widgetURL(URL(string: "bookloop://"))
     }
 }
 
@@ -138,6 +89,6 @@ struct BookLoop_Widget: Widget {
         }
         .configurationDisplayName("BookLoop")
         .description("Quick access to your current audiobook.")
-        .supportedFamilies([.accessoryRectangular, .accessoryCircular])
+        .supportedFamilies([.accessoryCircular])
     }
 }

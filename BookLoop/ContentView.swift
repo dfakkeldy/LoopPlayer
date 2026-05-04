@@ -339,7 +339,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         applySpeedToCurrentItem()
 
         player?.volume = 1.0
-        player?.playImmediately(atRate: speed)
+        player?.defaultRate = speed
+        player?.rate = speed
         isPlaying = true
 
         updateNowPlayingInfo(isPaused: false)
@@ -376,18 +377,12 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         for i in (currentIndex + 1)..<tracks.count {
             if tracks[i].isEnabled { return i }
         }
-        for i in 0...currentIndex {
-            if tracks[i].isEnabled { return i }
-        }
         return nil
     }
 
     private func findPrevEnabledTrackIndex() -> Int? {
         guard !tracks.isEmpty else { return nil }
         for i in stride(from: currentIndex - 1, through: 0, by: -1) {
-            if tracks[i].isEnabled { return i }
-        }
-        for i in stride(from: tracks.count - 1, through: currentIndex, by: -1) {
             if tracks[i].isEnabled { return i }
         }
         return nil
@@ -431,6 +426,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             player?.seek(to: .zero) { [weak self] _ in
                 DispatchQueue.main.async {
                     self?.isManualSeeking = false
+                    self?.updateCurrentChapterFromPlayerTime()
                 }
             }
             updateNowPlayingElapsedTime()
@@ -440,6 +436,15 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
         if let newIndex = findPrevEnabledTrackIndex() {
             prepareToPlay(index: newIndex, autoplay: true)
+        } else {
+            // If it's the first track and elapsed < 5, just restart it.
+            isManualSeeking = true
+            player?.seek(to: .zero) { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.isManualSeeking = false
+                    self?.updateCurrentChapterFromPlayerTime()
+                }
+            }
         }
     }
 
@@ -490,7 +495,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         let current = player.currentTime().seconds
         let target = max(0, current - 30)
         isManualSeeking = true
-        player.seek(to: CMTime(seconds: target, preferredTimescale: 600)) { [weak self] _ in
+        player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             DispatchQueue.main.async {
                 self?.isManualSeeking = false
                 self?.updateCurrentChapterFromPlayerTime()
@@ -580,6 +585,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             player?.replaceCurrentItem(with: item)
         }
 
+        player?.defaultRate = speed
+
         applySpeedToCurrentItem()
         configureRemoteCommandsIfNeeded()
         attachObserversForCurrentItem()
@@ -588,26 +595,17 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         updateNowPlayingInfo(isPaused: true)
         updateProgressFromPlayer()
 
-        // Load duration using modern async API (avoids iOS 16+ deprecation warnings).
-        Task { [weak self] in
-            guard let self else { return }
-            await self.loadDurationForNowPlaying()
-        }
-
-        Task { [weak self] in
-            guard let self else { return }
-            await self.generateThumbnail(for: trackURL)
-        }
-
         Task { [weak self] in
             guard let self else { return }
             await self.loadChaptersForCurrentItem()
-        }
-
-        if autoplay {
-            // Loop mode requirement: pressing Next while loop is ON should start looping that new track.
-            // That behavior is naturally satisfied by "play the new track" + our end-of-track loop logic.
-            play()
+            await self.loadDurationForNowPlaying()
+            await self.generateThumbnail(for: trackURL)
+            
+            await MainActor.run {
+                if autoplay {
+                    self.play()
+                }
+            }
         }
     }
 
@@ -626,7 +624,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
         // Keep Now Playing elapsed time updated (helps Apple Watch UI)
         timeObserver = player?.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 1, preferredTimescale: 600),
+            forInterval: CMTime(seconds: 0.25, preferredTimescale: 600),
             queue: .main
         ) { [weak self] _ in
             DispatchQueue.main.async {
@@ -662,21 +660,39 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         guard let player else { return }
         
         if chapters.count >= 2 {
-            if loopModeOn, let firstIdx = findNextEnabledChapterIndex(after: -1) {
-                seekToChapter(at: firstIdx)
-            } else {
-                nextTrack()
+            if loopModeOn {
+                // If it hits the absolute end of the file, just loop the current (last) chapter.
+                if let idx = currentChapterIndex {
+                    let c = chapters[idx]
+                    let targetSeconds = c.startSeconds + 0.05
+                    player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                        DispatchQueue.main.async {
+                            guard let self else { return }
+                            if self.isPlaying {
+                                self.player?.defaultRate = self.speed
+                                self.player?.playImmediately(atRate: self.speed)
+                                self.applySpeedToCurrentItem()
+                            } else {
+                                self.updateNowPlayingInfo(isPaused: true)
+                            }
+                            self.updateProgressFromPlayer()
+                        }
+                    }
+                    return
+                }
             }
+            nextTrack()
             return
         }
 
         if loopModeOn {
-            player.seek(to: .zero) { [weak self] _ in
+            player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                 DispatchQueue.main.async {
                     guard let self else { return }
                     if self.isPlaying {
+                        self.player?.defaultRate = self.speed
+                        self.player?.playImmediately(atRate: self.speed)
                         self.applySpeedToCurrentItem()
-                        self.player?.play()
                     } else {
                         self.updateNowPlayingInfo(isPaused: true)
                     }
@@ -692,6 +708,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         // Keep the pitch-preserving algorithm even after loops/track changes.
         player?.currentItem?.audioTimePitchAlgorithm = .timeDomain
         if isPlaying {
+            player?.defaultRate = speed
             player?.rate = speed
         }
     }
@@ -990,12 +1007,17 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                    savedTime > 0, savedTime < seconds {
                     await MainActor.run {
                         self.isManualSeeking = true
-                        self.player?.seek(to: CMTime(seconds: savedTime, preferredTimescale: 600)) { [weak self] _ in
+                        self.player?.seek(to: CMTime(seconds: savedTime, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                             DispatchQueue.main.async {
                                 self?.isManualSeeking = false
                                 self?.updateCurrentChapterFromPlayerTime()
                                 self?.updateNowPlayingElapsedTime()
                                 self?.updateProgressFromPlayer()
+                                if self?.isPlaying == true {
+                                    self?.player?.defaultRate = self?.speed ?? 1.0
+                                    self?.player?.playImmediately(atRate: self?.speed ?? 1.0)
+                                    self?.applySpeedToCurrentItem()
+                                }
                             }
                         }
                     }
@@ -1117,7 +1139,13 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         let t = player.currentTime().seconds
         guard t.isFinite else { return }
 
-        if let idx = chapters.firstIndex(where: { t >= $0.startSeconds && t < $0.endSeconds }) {
+        // Find all chapters that contain the current time
+        let matching = chapters.filter { t >= $0.startSeconds && t < $0.endSeconds }
+        
+        // Pick the most specific one (shortest duration) to ignore global/overlapping chapters
+        if let bestMatch = matching.min(by: { ($0.endSeconds - $0.startSeconds) < ($1.endSeconds - $1.startSeconds) }),
+           let idx = chapters.firstIndex(of: bestMatch) {
+            
             if currentChapterIndex != idx {
                 currentChapterIndex = idx
                 let c = chapters[idx]
@@ -1134,7 +1162,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
     private func currentChapterForTime(_ t: Double) -> Chapter? {
         guard chapters.count >= 2 else { return nil }
-        return chapters.first(where: { t >= $0.startSeconds && t < $0.endSeconds })
+        let matching = chapters.filter { t >= $0.startSeconds && t < $0.endSeconds }
+        return matching.min(by: { ($0.endSeconds - $0.startSeconds) < ($1.endSeconds - $1.startSeconds) })
     }
 
     private func applyChapterLoopIfNeeded() {
@@ -1146,28 +1175,29 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         guard t.isFinite else { return }
 
         let c = chapters[idx]
-        if t >= (c.endSeconds - 1.5) {
-            isSeekingForChapterBoundary = true
-            
-            if let nextIdx = findNextEnabledChapterIndex(after: idx) {
-                let nextC = chapters[nextIdx]
-                player.seek(to: CMTime(seconds: nextC.startSeconds, preferredTimescale: 600)) { [weak self] _ in
+        if t >= (c.endSeconds - 0.5) {
+            if loopModeOn {
+                // Loop the CURRENT chapter.
+                isSeekingForChapterBoundary = true
+                let targetSeconds = c.startSeconds + 0.05
+                player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                     self?.resumeAfterSeek()
                 }
             } else {
-                if loopModeOn {
-                    if let firstIdx = findNextEnabledChapterIndex(after: -1) {
-                        let firstC = chapters[firstIdx]
-                        player.seek(to: CMTime(seconds: firstC.startSeconds, preferredTimescale: 600)) { [weak self] _ in
-                            self?.resumeAfterSeek()
-                        }
+                if let nextIdx = findNextEnabledChapterIndex(after: idx) {
+                    let nextC = chapters[nextIdx]
+                    // If the next chapter starts exactly where this one ends (or very close), just let it play naturally.
+                    if abs(nextC.startSeconds - c.endSeconds) < 1.0 && nextIdx == idx + 1 {
+                        // Do nothing! Let AVPlayer seamlessly continue into the next chapter.
                     } else {
-                        DispatchQueue.main.async { [weak self] in
-                            self?.isSeekingForChapterBoundary = false
-                            self?.nextTrack()
+                        // Skip disabled chapters or gaps.
+                        isSeekingForChapterBoundary = true
+                        player.seek(to: CMTime(seconds: nextC.startSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                            self?.resumeAfterSeek()
                         }
                     }
                 } else {
+                    // This is the LAST chapter and loop is OFF. Go to next track.
                     DispatchQueue.main.async { [weak self] in
                         self?.isSeekingForChapterBoundary = false
                         self?.nextTrack()
@@ -1182,8 +1212,9 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             guard let self else { return }
             self.isSeekingForChapterBoundary = false
             if self.isPlaying {
+                self.player?.defaultRate = self.speed
+                self.player?.playImmediately(atRate: self.speed)
                 self.applySpeedToCurrentItem()
-                self.player?.play()
             } else {
                 self.updateNowPlayingInfo(isPaused: true)
             }
@@ -1200,15 +1231,16 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         let targetSeconds = c.startSeconds + 0.05
         
         isManualSeeking = true
-        player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600)) { [weak self] _ in
+        player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             DispatchQueue.main.async {
                 self?.isManualSeeking = false
                 self?.updateCurrentChapterFromPlayerTime()
                 self?.updateNowPlayingElapsedTime()
                 self?.updateProgressFromPlayer()
                 if self?.isPlaying == true {
+                    self?.player?.defaultRate = self?.speed ?? 1.0
+                    self?.player?.playImmediately(atRate: self?.speed ?? 1.0)
                     self?.applySpeedToCurrentItem()
-                    self?.player?.play()
                 }
             }
         }
@@ -1269,7 +1301,8 @@ struct ContentView: View {
     var body: some View {
         @Bindable var model = model
 
-        VStack(alignment: .leading, spacing: 16) {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .center, spacing: 12) {
                 if let image = model.thumbnailImage {
                     Image(uiImage: image)
@@ -1366,57 +1399,6 @@ struct ContentView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
 
-            HStack(spacing: 12) {
-                Toggle("Loop", isOn: $model.loopModeOn)
-                    .toggleStyle(.switch)
-                    .fixedSize()
-
-                Spacer()
-
-                Button {
-                    let speeds: [Float] = [1.0, 1.25, 1.5, 2.0]
-                    if let index = speeds.firstIndex(of: model.speed) {
-                        let nextIndex = (index + 1) % speeds.count
-                        model.setSpeed(speeds[nextIndex])
-                    } else {
-                        model.setSpeed(1.0)
-                    }
-                } label: {
-                    Text(String(format: "%gx", model.speed))
-                        .font(.headline)
-                        .frame(minWidth: 60, minHeight: 32)
-                }
-                .buttonStyle(.bordered)
-            }
-
-            HStack(spacing: 60) {
-                Button {
-                    showingFolderPicker = true
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "folder")
-                            .font(.title2)
-                        Text("Select")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.secondary)
-                }
-
-                Button {
-                    showingPlaylist = true
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: "list.bullet")
-                            .font(.title2)
-                        Text("Playlist")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 8)
-
             if !model.tracks.isEmpty {
                 Text("Tracks: \(model.tracks.count)  •  Current: \(model.currentIndex + 1)")
                     .font(.footnote)
@@ -1429,8 +1411,58 @@ struct ContentView: View {
             }
 
             Spacer()
+            
+            // Custom Bottom Toolbar to avoid UIKitToolbar errors
+            VStack(spacing: 0) {
+                Divider()
+                HStack {
+                Button {
+                    model.loopModeOn.toggle()
+                } label: {
+                        Image(systemName: model.loopModeOn ? "infinity.circle.fill" : "infinity.circle")
+                            .font(.title2)
+                    }
+                    
+                    Spacer()
+                    
+                Button {
+                    let speeds: [Float] = [1.0, 1.25, 1.5, 2.0, 10.0]
+                    if let index = speeds.firstIndex(of: model.speed) {
+                        let nextIndex = (index + 1) % speeds.count
+                        model.setSpeed(speeds[nextIndex])
+                    } else {
+                        model.setSpeed(1.0)
+                    }
+                } label: {
+                        Text(String(format: "%gx", model.speed))
+                            .font(.headline)
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        showingFolderPicker = true
+                    } label: {
+                        Image(systemName: "folder")
+                            .font(.title2)
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        showingPlaylist = true
+                    } label: {
+                        Image(systemName: "list.bullet")
+                            .font(.title2)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+            }
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.top)
         .sheet(isPresented: $showingFolderPicker) {
             FolderPicker { url in
                 showingFolderPicker = false
@@ -1447,6 +1479,7 @@ struct ContentView: View {
             model.restoreLastSelectionIfPossible()
         }
         .preferredColorScheme(.dark)
+        }
     }
 }
 
