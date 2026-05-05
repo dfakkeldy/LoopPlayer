@@ -7,5 +7,10 @@
 		<string>audio</string>
 		<string>fetch</string>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Lexend.ttf</string>
+		<string>OpenDyslexic-Regular.otf</string>
+	</array>
 </dict>
 </plist>

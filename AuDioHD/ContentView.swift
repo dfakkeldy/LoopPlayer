@@ -1467,9 +1467,47 @@ struct FolderPicker: UIViewControllerRepresentable {
 
 // MARK: - UI (single screen)
 
+struct CustomFontModifier: ViewModifier {
+    @AppStorage("appFont") private var appFont = "Helvetica"
+    var style: Font.TextStyle
+    var weight: Font.Weight = .regular
+
+    func body(content: Content) -> some View {
+        let size: CGFloat
+        switch style {
+        case .largeTitle: size = 34
+        case .title: size = 28
+        case .title2: size = 22
+        case .title3: size = 20
+        case .headline: size = 17
+        case .body: size = 17
+        case .callout: size = 16
+        case .subheadline: size = 15
+        case .footnote: size = 13
+        case .caption: size = 12
+        case .caption2: size = 11
+        @unknown default: size = 17
+        }
+        
+        if appFont == "Helvetica" {
+            // Use system font for default to ensure perfect dynamic type support if preferred
+            return AnyView(content.font(.system(size: size, weight: weight, design: .default)))
+        } else {
+            return AnyView(content.font(.custom(appFont, size: size, relativeTo: style).weight(weight)))
+        }
+    }
+}
+
+extension View {
+    func customFont(_ style: Font.TextStyle, weight: Font.Weight = .regular) -> some View {
+        self.modifier(CustomFontModifier(style: style, weight: weight))
+    }
+}
+
 struct ContentView: View {
     @State private var model = PlayerModel()
     @AppStorage("isDarkMode") private var isDarkMode = true
+    @AppStorage("appFont") private var appFont = "Helvetica"
     @State private var showingFolderPicker = false
     @State private var showingPlaylist = false
     @State private var showingSettings = false
@@ -1509,10 +1547,10 @@ struct ContentView: View {
 
                 VStack(alignment: .center, spacing: 6) {
                     Text(model.chapters.count >= 2 ? "Current Chapter" : "Current Title")
-                        .font(.caption)
+                        .customFont(.caption)
                         .foregroundStyle(.secondary)
                     Text(model.chapters.count >= 2 ? (model.currentSubtitle.isEmpty ? "Chapter \(model.currentChapterIndex ?? 0 + 1)" : model.currentSubtitle) : model.currentTitle)
-                        .font(.title2.weight(.semibold))
+                        .customFont(.title2, weight: .semibold)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                         .minimumScaleFactor(0.8)
@@ -1524,17 +1562,17 @@ struct ContentView: View {
 
             if model.chapters.count >= 2 {
                 Text("Chapter \((model.currentChapterIndex ?? 0) + 1) of \(model.chapters.count)")
-                    .font(.footnote)
+                    .customFont(.footnote)
                     .foregroundStyle(.secondary)
             } else if !model.tracks.isEmpty {
                 Text("Track \(model.currentIndex + 1) of \(model.tracks.count)")
-                    .font(.footnote)
+                    .customFont(.footnote)
                     .foregroundStyle(.secondary)
             }
 
             HStack(spacing: 12) {
                 Text(model.elapsedText)
-                    .font(.footnote)
+                    .customFont(.footnote)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                 
@@ -1555,7 +1593,7 @@ struct ContentView: View {
                 .tint(.primary)
                 
                 Text(model.progressText)
-                    .font(.footnote)
+                    .customFont(.footnote)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -1665,7 +1703,7 @@ struct ContentView: View {
                         }
                     } label: {
                         Text(String(format: "%gx", model.speed))
-                            .font(.headline)
+                            .customFont(.headline)
                             .frame(minWidth: 44, minHeight: 44)
                     }
                     
@@ -1702,6 +1740,7 @@ struct ContentView: View {
             // Use native bar material for background to match HIG natively without the UIKit warning
             .background(.bar)
         }
+        .environment(\.font, appFont == "Helvetica" ? .body : .custom(appFont, size: 17, relativeTo: .body))
         .padding(.horizontal)
         .padding(.top)
         .sheet(isPresented: $showingFolderPicker) {
@@ -1730,6 +1769,7 @@ struct ContentView: View {
 struct SettingsView: View {
     @Bindable var model: PlayerModel
     @AppStorage("isDarkMode") private var isDarkMode = true
+    @AppStorage("appFont") private var appFont = "Helvetica"
     @AppStorage("isRewindEnabled") private var isRewindEnabled = false
     @AppStorage("rewindPauseDuration") private var rewindPauseDuration = 60 // 1 minute default
     @AppStorage("rewindAmount") private var rewindAmount = 15 // 15 seconds default
@@ -1741,7 +1781,21 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Toggle("Dark Mode", isOn: $isDarkMode)
+                    NavigationLink("Appearance") {
+                        Form {
+                            Section {
+                                Toggle("Dark Mode", isOn: $isDarkMode)
+                            }
+                            Section {
+                                Picker("Font", selection: $appFont) {
+                                    Text("Helvetica").tag("Helvetica")
+                                    Text("OpenDyslexic").tag("OpenDyslexic")
+                                    Text("Lexend").tag("Lexend")
+                                }
+                            }
+                        }
+                        .navigationTitle("Appearance")
+                    }
                 }
                 Section(header: Text("Watch Settings")) {
                     Picker("Digital Crown", selection: $localCrownAction) {
@@ -1768,12 +1822,14 @@ struct SettingsView: View {
                 }
             }
         }
+        .environment(\.font, appFont == "Helvetica" ? .body : .custom(appFont, size: 17, relativeTo: .body))
         .preferredColorScheme(isDarkMode ? .dark : .light)
     }
 }
 
 struct PlaylistView: View {
     @Bindable var model: PlayerModel
+    @AppStorage("appFont") private var appFont = "Helvetica"
     @Environment(\.dismiss) private var dismiss
     @State private var editMode: EditMode = .active
 
@@ -1799,7 +1855,7 @@ struct PlaylistView: View {
                                 Text(chapter.title ?? "Chapter \(chapter.index + 1)")
                                 Spacer()
                                 Text(formatDuration(chapter.endSeconds - chapter.startSeconds))
-                                    .font(.caption)
+                                    .customFont(.caption)
                             }
                             .foregroundStyle(chapter.isEnabled ? .primary : .tertiary)
                         }
@@ -1836,6 +1892,7 @@ struct PlaylistView: View {
                 }
             }
         }
+        .environment(\.font, appFont == "Helvetica" ? .body : .custom(appFont, size: 17, relativeTo: .body))
     }
 }
 
