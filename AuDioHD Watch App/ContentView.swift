@@ -10,6 +10,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var title: String = "No track"
     var thumbnailImage: UIImage? = nil
     var progressFraction: Double = 0.0
+    var loopModeOn: Bool = true
     
     override init() {
         super.init()
@@ -39,6 +40,10 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             if let progressFraction = applicationContext["progressFraction"] as? Double {
                 self.progressFraction = progressFraction
                 defaults?.set(progressFraction, forKey: "progressFraction")
+            }
+            if let loopModeOn = applicationContext["loopModeOn"] as? Bool {
+                self.loopModeOn = loopModeOn
+                defaults?.set(loopModeOn, forKey: "loopModeOn")
             }
             if let thumbnailData = applicationContext["thumbnailData"] as? Data {
                 defaults?.set(thumbnailData, forKey: "thumbnailData")
@@ -188,6 +193,25 @@ struct ContentView: View {
                     .buttonStyle(.borderedProminent)
                 }
                 .padding(.top, 6)
+            }
+            
+            VStack {
+                HStack {
+                    Button {
+                        viewModel.sendCommand("toggleLoopMode")
+                        viewModel.loopModeOn.toggle()
+                    } label: {
+                        Image(systemName: viewModel.loopModeOn ? "infinity.circle.fill" : "infinity.circle")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 8)
+                    .padding(.top, 8)
+                    
+                    Spacer()
+                }
+                Spacer()
             }
         }
         .focusable(true)

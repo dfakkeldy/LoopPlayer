@@ -155,6 +155,9 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                         self.player?.volume = newVol
                     }
                 case "toggle": self.togglePlayPause()
+                case "toggleLoopMode":
+                    self.setLoopMode(!self.loopModeOn)
+                    self.syncToWatch()
                 default: break
                 }
             }
@@ -183,6 +186,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         
         let crownAction = UserDefaults.standard.string(forKey: "crownAction") ?? "volume"
         context["crownAction"] = crownAction
+        context["loopModeOn"] = loopModeOn
         
         if let data = watchThumbnailData {
             context["thumbnailData"] = data
@@ -667,6 +671,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         if let key = folderURL?.absoluteString {
             persistence.saveLoopMode(for: key, loopMode: mode)
         }
+        syncToWatch()
     }
 
     private func stop() {
@@ -1797,14 +1802,21 @@ struct SettingsView: View {
                         .navigationTitle("Appearance")
                     }
                 }
-                Section(header: Text("Watch Settings")) {
-                    Picker("Digital Crown", selection: $localCrownAction) {
-                        Text("Volume Control").tag("volume")
-                        Text("Scrubbing").tag("scrub")
-                    }
-                    .onChange(of: localCrownAction) { oldValue, newValue in
-                        UserDefaults.standard.set(newValue, forKey: "crownAction")
-                        model.syncToWatch()
+                Section {
+                    NavigationLink("Watch App") {
+                        Form {
+                            Section(header: Text("Watch Settings")) {
+                                Picker("Digital Crown", selection: $localCrownAction) {
+                                    Text("Volume Control").tag("volume")
+                                    Text("Scrubbing").tag("scrub")
+                                }
+                                .onChange(of: localCrownAction) { oldValue, newValue in
+                                    UserDefaults.standard.set(newValue, forKey: "crownAction")
+                                    model.syncToWatch()
+                                }
+                            }
+                        }
+                        .navigationTitle("Watch App")
                     }
                 }
                 Section(header: Text("Smart Rewind"), footer: Text("Automatically rewind playback after being paused for a specific duration.")) {
