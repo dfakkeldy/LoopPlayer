@@ -1,6 +1,6 @@
 require 'xcodeproj'
 
-project_path = 'BookLoop.xcodeproj'
+project_path = 'AuDioHD.xcodeproj'
 project = Xcodeproj::Project.open(project_path)
 
 project.targets.each do |target|

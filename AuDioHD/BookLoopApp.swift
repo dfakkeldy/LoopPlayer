@@ -1,6 +1,6 @@
 //
-//  BookLoopApp.swift
-//  BookLoop
+//  AuDioHDApp.swift
+//  AuDioHD
 //
 //  Created by Dan Fakkeldy on 2026-04-19.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct BookLoopApp: App {
+struct AuDioHDApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

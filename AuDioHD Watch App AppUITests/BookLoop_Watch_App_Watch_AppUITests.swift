@@ -1,13 +1,13 @@
 //
-//  BookLoopUITests.swift
-//  BookLoopUITests
+//  AuDioHD_Watch_App_Watch_AppUITests.swift
+//  AuDioHD Watch App Watch AppUITests
 //
-//  Created by Dan Fakkeldy on 2026-04-19.
+//  Created by Dan Fakkeldy on 2026-05-02.
 //
 
 import XCTest
 
-final class BookLoopUITests: XCTestCase {
+final class AuDioHD_Watch_App_Watch_AppUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

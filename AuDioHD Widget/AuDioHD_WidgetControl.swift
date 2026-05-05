@@ -1,6 +1,6 @@
 //
-//  BookLoop_WidgetControl.swift
-//  BookLoop Widget
+//  AuDioHD_WidgetControl.swift
+//  AuDioHD Widget
 //
 //  Created by Dan Fakkeldy on 2026-05-02.
 //
@@ -9,8 +9,8 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-struct BookLoop_WidgetControl: ControlWidget {
-    static let kind: String = "Dan.BookLoop.watchkitapp.BookLoop Widget"
+struct AuDioHD_WidgetControl: ControlWidget {
+    static let kind: String = "Dan.AuDioHD.watchkitapp.AuDioHD Widget"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(
@@ -30,7 +30,7 @@ struct BookLoop_WidgetControl: ControlWidget {
     }
 }
 
-extension BookLoop_WidgetControl {
+extension AuDioHD_WidgetControl {
     struct Value {
         var isRunning: Bool
         var name: String
@@ -38,12 +38,12 @@ extension BookLoop_WidgetControl {
 
     struct Provider: AppIntentControlValueProvider {
         func previewValue(configuration: TimerConfiguration) -> Value {
-            BookLoop_WidgetControl.Value(isRunning: false, name: configuration.timerName)
+            AuDioHD_WidgetControl.Value(isRunning: false, name: configuration.timerName)
         }
 
         func currentValue(configuration: TimerConfiguration) async throws -> Value {
             let isRunning = true // Check if the timer is running
-            return BookLoop_WidgetControl.Value(isRunning: isRunning, name: configuration.timerName)
+            return AuDioHD_WidgetControl.Value(isRunning: isRunning, name: configuration.timerName)
         }
     }
 }

@@ -56,7 +56,7 @@ struct SimpleEntry: TimelineEntry {
     }
 }
 
-struct BookLoop_WidgetEntryView : View {
+struct AuDioHD_WidgetEntryView : View {
     @Environment(\.widgetFamily) var family
     var entry: Provider.Entry
 
@@ -97,14 +97,14 @@ struct BookLoop_WidgetEntryView : View {
     }
 }
 
-struct BookLoop_Widget: Widget {
-    let kind: String = "BookLoop_Widget"
+struct AuDioHD_Widget: Widget {
+    let kind: String = "AuDioHD_Widget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            BookLoop_WidgetEntryView(entry: entry)
+            AuDioHD_WidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("BookLoop")
+        .configurationDisplayName("AuDioHD")
         .description("Quick access to your current audiobook.")
         .supportedFamilies([.accessoryCircular])
     }

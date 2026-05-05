@@ -15,6 +15,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CCC48E9A2FA6AB330003458B"
+               BuildableName = "AuDioHD Watch App.app"
+               BlueprintName = "AuDioHD Watch App"
+               ReferencedContainer = "container:AuDioHD.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "CC08EC582F9522F600206D2F"
                BuildableName = "AuDioHD.app"
                BlueprintName = "AuDioHD"
@@ -35,9 +49,9 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CC08EC652F9522F800206D2F"
-               BuildableName = "AuDioHDTests.xctest"
-               BlueprintName = "AuDioHDTests"
+               BlueprintIdentifier = "CCC48EA62FA6AB340003458B"
+               BuildableName = "AuDioHD Watch AppTests.xctest"
+               BlueprintName = "AuDioHD Watch AppTests"
                ReferencedContainer = "container:AuDioHD.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -46,9 +60,9 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CC08EC6F2F9522F800206D2F"
-               BuildableName = "AuDioHDUITests.xctest"
-               BlueprintName = "AuDioHDUITests"
+               BlueprintIdentifier = "CCC48EB02FA6AB340003458B"
+               BuildableName = "AuDioHD Watch AppUITests.xctest"
+               BlueprintName = "AuDioHD Watch AppUITests"
                ReferencedContainer = "container:AuDioHD.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -69,9 +83,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CC08EC582F9522F600206D2F"
-            BuildableName = "AuDioHD.app"
-            BlueprintName = "AuDioHD"
+            BlueprintIdentifier = "CCC48E9A2FA6AB330003458B"
+            BuildableName = "AuDioHD Watch App.app"
+            BlueprintName = "AuDioHD Watch App"
             ReferencedContainer = "container:AuDioHD.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -86,9 +100,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "CC08EC582F9522F600206D2F"
-            BuildableName = "AuDioHD.app"
-            BlueprintName = "AuDioHD"
+            BlueprintIdentifier = "CCC48E9A2FA6AB330003458B"
+            BuildableName = "AuDioHD Watch App.app"
+            BlueprintName = "AuDioHD Watch App"
             ReferencedContainer = "container:AuDioHD.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		CC00BC502FA6B66400323F38 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC00BC4F2FA6B66400323F38 /* WidgetKit.framework */; };
 		CC00BC522FA6B66400323F38 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC00BC512FA6B66400323F38 /* SwiftUI.framework */; };
-		CC00BC612FA6B66500323F38 /* BookLoop WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		CCC48EBB2FA6AB350003458B /* BookLoop Watch App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CCC48E9B2FA6AB330003458B /* BookLoop Watch App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CC00BC612FA6B66500323F38 /* AuDioHD WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CC00BC4D2FA6B66400323F38 /* AuDioHD WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CCC48EBB2FA6AB350003458B /* AuDioHD Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CCC48E9B2FA6AB330003458B /* AuDioHD Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -19,42 +19,42 @@
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CC00BC4C2FA6B66400323F38;
-			remoteInfo = "BookLoop WidgetExtension";
+			remoteInfo = "AuDioHD WidgetExtension";
 		};
 		CC08EC672F9522F800206D2F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CC08EC582F9522F600206D2F;
-			remoteInfo = BookLoop;
+			remoteInfo = AuDioHD;
 		};
 		CC08EC712F9522F800206D2F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CC08EC582F9522F600206D2F;
-			remoteInfo = BookLoop;
+			remoteInfo = AuDioHD;
 		};
 		CCC48EA82FA6AB340003458B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CCC48E9A2FA6AB330003458B;
-			remoteInfo = "BookLoop Watch App Watch App";
+			remoteInfo = "AuDioHD Watch App";
 		};
 		CCC48EB22FA6AB340003458B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CCC48E9A2FA6AB330003458B;
-			remoteInfo = "BookLoop Watch App Watch App";
+			remoteInfo = "AuDioHD Watch App";
 		};
 		CCC48EB92FA6AB350003458B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CCC48E9A2FA6AB330003458B;
-			remoteInfo = "BookLoop Watch App Watch App";
+			remoteInfo = "AuDioHD Watch App";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -65,7 +65,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				CC00BC612FA6B66500323F38 /* BookLoop WidgetExtension.appex in Embed Foundation Extensions */,
+				CC00BC612FA6B66500323F38 /* AuDioHD WidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -76,7 +76,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				CCC48EBB2FA6AB350003458B /* BookLoop Watch App Watch App.app in Embed Watch Content */,
+				CCC48EBB2FA6AB350003458B /* AuDioHD Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -84,74 +84,74 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "BookLoop WidgetExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC00BC4D2FA6B66400323F38 /* AuDioHD WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "AuDioHD WidgetExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC00BC4F2FA6B66400323F38 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		CC00BC512FA6B66400323F38 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		CC08EC592F9522F600206D2F /* BookLoop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BookLoop.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		CC08EC662F9522F800206D2F /* BookLoopTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookLoopTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		CC08EC702F9522F800206D2F /* BookLoopUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BookLoopUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCC48E9B2FA6AB330003458B /* BookLoop Watch App Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BookLoop Watch App Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCC48EA72FA6AB340003458B /* BookLoop Watch App Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "BookLoop Watch App Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCC48EB12FA6AB340003458B /* BookLoop Watch App Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "BookLoop Watch App Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC08EC592F9522F600206D2F /* AuDioHD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AuDioHD.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC08EC662F9522F800206D2F /* AuDioHDTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuDioHDTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC08EC702F9522F800206D2F /* AuDioHDUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AuDioHDUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCC48E9B2FA6AB330003458B /* AuDioHD Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AuDioHD Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCC48EA72FA6AB340003458B /* AuDioHD Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "AuDioHD Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCC48EB12FA6AB340003458B /* AuDioHD Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "AuDioHD Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		CC00BC662FA6B66500323F38 /* Exceptions for "BookLoop Widget" folder in "BookLoop WidgetExtension" target */ = {
+		CC00BC662FA6B66500323F38 /* Exceptions for "AuDioHD Widget" folder in "AuDioHD WidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */;
+			target = CC00BC4C2FA6B66400323F38 /* AuDioHD WidgetExtension */;
 		};
-		CC08EC842F95256B00206D2F /* Exceptions for "BookLoop" folder in "BookLoop" target */ = {
+		CC08EC842F95256B00206D2F /* Exceptions for "AuDioHD" folder in "AuDioHD" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = CC08EC582F9522F600206D2F /* BookLoop */;
+			target = CC08EC582F9522F600206D2F /* AuDioHD */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		CC00BC532FA6B66400323F38 /* BookLoop Widget */ = {
+		CC00BC532FA6B66400323F38 /* AuDioHD Widget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CC00BC662FA6B66500323F38 /* Exceptions for "BookLoop Widget" folder in "BookLoop WidgetExtension" target */,
+				CC00BC662FA6B66500323F38 /* Exceptions for "AuDioHD Widget" folder in "AuDioHD WidgetExtension" target */,
 			);
-			path = "BookLoop Widget";
+			path = "AuDioHD Widget";
 			sourceTree = "<group>";
 		};
-		CC08EC5B2F9522F600206D2F /* BookLoop */ = {
+		CC08EC5B2F9522F600206D2F /* AuDioHD */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CC08EC842F95256B00206D2F /* Exceptions for "BookLoop" folder in "BookLoop" target */,
+				CC08EC842F95256B00206D2F /* Exceptions for "AuDioHD" folder in "AuDioHD" target */,
 			);
-			path = BookLoop;
+			path = AuDioHD;
 			sourceTree = "<group>";
 		};
-		CC08EC692F9522F800206D2F /* BookLoopTests */ = {
+		CC08EC692F9522F800206D2F /* AuDioHDTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BookLoopTests;
+			path = AuDioHDTests;
 			sourceTree = "<group>";
 		};
-		CC08EC732F9522F800206D2F /* BookLoopUITests */ = {
+		CC08EC732F9522F800206D2F /* AuDioHDUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BookLoopUITests;
+			path = AuDioHDUITests;
 			sourceTree = "<group>";
 		};
-		CCC48E9C2FA6AB330003458B /* BookLoop Watch App Watch App */ = {
+		CCC48E9C2FA6AB330003458B /* AuDioHD Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "BookLoop Watch App Watch App";
+			path = "AuDioHD Watch App";
 			sourceTree = "<group>";
 		};
-		CCC48EAA2FA6AB340003458B /* BookLoop Watch App Watch AppTests */ = {
+		CCC48EAA2FA6AB340003458B /* AuDioHD Watch AppTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "BookLoop Watch App Watch AppTests";
+			path = "AuDioHD Watch AppTests";
 			sourceTree = "<group>";
 		};
-		CCC48EB42FA6AB340003458B /* BookLoop Watch App Watch AppUITests */ = {
+		CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "BookLoop Watch App Watch AppUITests";
+			path = "AuDioHD Watch AppUITests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -223,13 +223,13 @@
 		CC08EC502F9522F600206D2F = {
 			isa = PBXGroup;
 			children = (
-				CC08EC5B2F9522F600206D2F /* BookLoop */,
-				CC08EC692F9522F800206D2F /* BookLoopTests */,
-				CC08EC732F9522F800206D2F /* BookLoopUITests */,
-				CCC48E9C2FA6AB330003458B /* BookLoop Watch App Watch App */,
-				CCC48EAA2FA6AB340003458B /* BookLoop Watch App Watch AppTests */,
-				CCC48EB42FA6AB340003458B /* BookLoop Watch App Watch AppUITests */,
-				CC00BC532FA6B66400323F38 /* BookLoop Widget */,
+				CC08EC5B2F9522F600206D2F /* AuDioHD */,
+				CC08EC692F9522F800206D2F /* AuDioHDTests */,
+				CC08EC732F9522F800206D2F /* AuDioHDUITests */,
+				CCC48E9C2FA6AB330003458B /* AuDioHD Watch App */,
+				CCC48EAA2FA6AB340003458B /* AuDioHD Watch AppTests */,
+				CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */,
+				CC00BC532FA6B66400323F38 /* AuDioHD Widget */,
 				CC00BC4E2FA6B66400323F38 /* Frameworks */,
 				CC08EC5A2F9522F600206D2F /* Products */,
 			);
@@ -238,13 +238,13 @@
 		CC08EC5A2F9522F600206D2F /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CC08EC592F9522F600206D2F /* BookLoop.app */,
-				CC08EC662F9522F800206D2F /* BookLoopTests.xctest */,
-				CC08EC702F9522F800206D2F /* BookLoopUITests.xctest */,
-				CCC48E9B2FA6AB330003458B /* BookLoop Watch App Watch App.app */,
-				CCC48EA72FA6AB340003458B /* BookLoop Watch App Watch AppTests.xctest */,
-				CCC48EB12FA6AB340003458B /* BookLoop Watch App Watch AppUITests.xctest */,
-				CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */,
+				CC08EC592F9522F600206D2F /* AuDioHD.app */,
+				CC08EC662F9522F800206D2F /* AuDioHDTests.xctest */,
+				CC08EC702F9522F800206D2F /* AuDioHDUITests.xctest */,
+				CCC48E9B2FA6AB330003458B /* AuDioHD Watch App.app */,
+				CCC48EA72FA6AB340003458B /* AuDioHD Watch AppTests.xctest */,
+				CCC48EB12FA6AB340003458B /* AuDioHD Watch AppUITests.xctest */,
+				CC00BC4D2FA6B66400323F38 /* AuDioHD WidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -252,9 +252,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */ = {
+		CC00BC4C2FA6B66400323F38 /* AuDioHD WidgetExtension */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CC00BC652FA6B66500323F38 /* Build configuration list for PBXNativeTarget "BookLoop WidgetExtension" */;
+			buildConfigurationList = CC00BC652FA6B66500323F38 /* Build configuration list for PBXNativeTarget "AuDioHD WidgetExtension" */;
 			buildPhases = (
 				CC00BC492FA6B66400323F38 /* Sources */,
 				CC00BC4A2FA6B66400323F38 /* Frameworks */,
@@ -265,16 +265,16 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				CC00BC532FA6B66400323F38 /* BookLoop Widget */,
+				CC00BC532FA6B66400323F38 /* AuDioHD Widget */,
 			);
-			name = "BookLoop WidgetExtension";
-			productName = "BookLoop WidgetExtension";
-			productReference = CC00BC4D2FA6B66400323F38 /* BookLoop WidgetExtension.appex */;
+			name = "AuDioHD WidgetExtension";
+			productName = "AuDioHD WidgetExtension";
+			productReference = CC00BC4D2FA6B66400323F38 /* AuDioHD WidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		CC08EC582F9522F600206D2F /* BookLoop */ = {
+		CC08EC582F9522F600206D2F /* AuDioHD */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CC08EC7A2F9522F800206D2F /* Build configuration list for PBXNativeTarget "BookLoop" */;
+			buildConfigurationList = CC08EC7A2F9522F800206D2F /* Build configuration list for PBXNativeTarget "AuDioHD" */;
 			buildPhases = (
 				CC08EC552F9522F600206D2F /* Sources */,
 				CC08EC562F9522F600206D2F /* Frameworks */,
@@ -287,16 +287,16 @@
 				CCC48EBA2FA6AB350003458B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CC08EC5B2F9522F600206D2F /* BookLoop */,
+				CC08EC5B2F9522F600206D2F /* AuDioHD */,
 			);
-			name = BookLoop;
-			productName = BookLoop;
-			productReference = CC08EC592F9522F600206D2F /* BookLoop.app */;
+			name = AuDioHD;
+			productName = AuDioHD;
+			productReference = CC08EC592F9522F600206D2F /* AuDioHD.app */;
 			productType = "com.apple.product-type.application";
 		};
-		CC08EC652F9522F800206D2F /* BookLoopTests */ = {
+		CC08EC652F9522F800206D2F /* AuDioHDTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CC08EC7D2F9522F800206D2F /* Build configuration list for PBXNativeTarget "BookLoopTests" */;
+			buildConfigurationList = CC08EC7D2F9522F800206D2F /* Build configuration list for PBXNativeTarget "AuDioHDTests" */;
 			buildPhases = (
 				CC08EC622F9522F800206D2F /* Sources */,
 				CC08EC632F9522F800206D2F /* Frameworks */,
@@ -308,16 +308,16 @@
 				CC08EC682F9522F800206D2F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CC08EC692F9522F800206D2F /* BookLoopTests */,
+				CC08EC692F9522F800206D2F /* AuDioHDTests */,
 			);
-			name = BookLoopTests;
-			productName = BookLoopTests;
-			productReference = CC08EC662F9522F800206D2F /* BookLoopTests.xctest */;
+			name = AuDioHDTests;
+			productName = AuDioHDTests;
+			productReference = CC08EC662F9522F800206D2F /* AuDioHDTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		CC08EC6F2F9522F800206D2F /* BookLoopUITests */ = {
+		CC08EC6F2F9522F800206D2F /* AuDioHDUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CC08EC802F9522F800206D2F /* Build configuration list for PBXNativeTarget "BookLoopUITests" */;
+			buildConfigurationList = CC08EC802F9522F800206D2F /* Build configuration list for PBXNativeTarget "AuDioHDUITests" */;
 			buildPhases = (
 				CC08EC6C2F9522F800206D2F /* Sources */,
 				CC08EC6D2F9522F800206D2F /* Frameworks */,
@@ -329,16 +329,16 @@
 				CC08EC722F9522F800206D2F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CC08EC732F9522F800206D2F /* BookLoopUITests */,
+				CC08EC732F9522F800206D2F /* AuDioHDUITests */,
 			);
-			name = BookLoopUITests;
-			productName = BookLoopUITests;
-			productReference = CC08EC702F9522F800206D2F /* BookLoopUITests.xctest */;
+			name = AuDioHDUITests;
+			productName = AuDioHDUITests;
+			productReference = CC08EC702F9522F800206D2F /* AuDioHDUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		CCC48E9A2FA6AB330003458B /* BookLoop Watch App Watch App */ = {
+		CCC48E9A2FA6AB330003458B /* AuDioHD Watch App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CCC48EBC2FA6AB350003458B /* Build configuration list for PBXNativeTarget "BookLoop Watch App Watch App" */;
+			buildConfigurationList = CCC48EBC2FA6AB350003458B /* Build configuration list for PBXNativeTarget "AuDioHD Watch App" */;
 			buildPhases = (
 				CCC48E972FA6AB330003458B /* Sources */,
 				CCC48E982FA6AB330003458B /* Frameworks */,
@@ -351,16 +351,16 @@
 				CC00BC602FA6B66500323F38 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CCC48E9C2FA6AB330003458B /* BookLoop Watch App Watch App */,
+				CCC48E9C2FA6AB330003458B /* AuDioHD Watch App */,
 			);
-			name = "BookLoop Watch App Watch App";
-			productName = "BookLoop Watch App Watch App";
-			productReference = CCC48E9B2FA6AB330003458B /* BookLoop Watch App Watch App.app */;
+			name = "AuDioHD Watch App";
+			productName = "AuDioHD Watch App";
+			productReference = CCC48E9B2FA6AB330003458B /* AuDioHD Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
-		CCC48EA62FA6AB340003458B /* BookLoop Watch App Watch AppTests */ = {
+		CCC48EA62FA6AB340003458B /* AuDioHD Watch AppTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CCC48EBF2FA6AB350003458B /* Build configuration list for PBXNativeTarget "BookLoop Watch App Watch AppTests" */;
+			buildConfigurationList = CCC48EBF2FA6AB350003458B /* Build configuration list for PBXNativeTarget "AuDioHD Watch AppTests" */;
 			buildPhases = (
 				CCC48EA32FA6AB340003458B /* Sources */,
 				CCC48EA42FA6AB340003458B /* Frameworks */,
@@ -372,16 +372,16 @@
 				CCC48EA92FA6AB340003458B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CCC48EAA2FA6AB340003458B /* BookLoop Watch App Watch AppTests */,
+				CCC48EAA2FA6AB340003458B /* AuDioHD Watch AppTests */,
 			);
-			name = "BookLoop Watch App Watch AppTests";
-			productName = "BookLoop Watch App Watch AppTests";
-			productReference = CCC48EA72FA6AB340003458B /* BookLoop Watch App Watch AppTests.xctest */;
+			name = "AuDioHD Watch AppTests";
+			productName = "AuDioHD Watch AppTests";
+			productReference = CCC48EA72FA6AB340003458B /* AuDioHD Watch AppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		CCC48EB02FA6AB340003458B /* BookLoop Watch App Watch AppUITests */ = {
+		CCC48EB02FA6AB340003458B /* AuDioHD Watch AppUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CCC48EC22FA6AB350003458B /* Build configuration list for PBXNativeTarget "BookLoop Watch App Watch AppUITests" */;
+			buildConfigurationList = CCC48EC22FA6AB350003458B /* Build configuration list for PBXNativeTarget "AuDioHD Watch AppUITests" */;
 			buildPhases = (
 				CCC48EAD2FA6AB340003458B /* Sources */,
 				CCC48EAE2FA6AB340003458B /* Frameworks */,
@@ -393,11 +393,11 @@
 				CCC48EB32FA6AB340003458B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CCC48EB42FA6AB340003458B /* BookLoop Watch App Watch AppUITests */,
+				CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */,
 			);
-			name = "BookLoop Watch App Watch AppUITests";
-			productName = "BookLoop Watch App Watch AppUITests";
-			productReference = CCC48EB12FA6AB340003458B /* BookLoop Watch App Watch AppUITests.xctest */;
+			name = "AuDioHD Watch AppUITests";
+			productName = "AuDioHD Watch AppUITests";
+			productReference = CCC48EB12FA6AB340003458B /* AuDioHD Watch AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -451,13 +451,13 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				CC08EC582F9522F600206D2F /* BookLoop */,
-				CC08EC652F9522F800206D2F /* BookLoopTests */,
-				CC08EC6F2F9522F800206D2F /* BookLoopUITests */,
-				CCC48E9A2FA6AB330003458B /* BookLoop Watch App Watch App */,
-				CCC48EA62FA6AB340003458B /* BookLoop Watch App Watch AppTests */,
-				CCC48EB02FA6AB340003458B /* BookLoop Watch App Watch AppUITests */,
-				CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */,
+				CC08EC582F9522F600206D2F /* AuDioHD */,
+				CC08EC652F9522F800206D2F /* AuDioHDTests */,
+				CC08EC6F2F9522F800206D2F /* AuDioHDUITests */,
+				CCC48E9A2FA6AB330003458B /* AuDioHD Watch App */,
+				CCC48EA62FA6AB340003458B /* AuDioHD Watch AppTests */,
+				CCC48EB02FA6AB340003458B /* AuDioHD Watch AppUITests */,
+				CC00BC4C2FA6B66400323F38 /* AuDioHD WidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -569,32 +569,32 @@
 /* Begin PBXTargetDependency section */
 		CC00BC602FA6B66500323F38 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CC00BC4C2FA6B66400323F38 /* BookLoop WidgetExtension */;
+			target = CC00BC4C2FA6B66400323F38 /* AuDioHD WidgetExtension */;
 			targetProxy = CC00BC5F2FA6B66500323F38 /* PBXContainerItemProxy */;
 		};
 		CC08EC682F9522F800206D2F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CC08EC582F9522F600206D2F /* BookLoop */;
+			target = CC08EC582F9522F600206D2F /* AuDioHD */;
 			targetProxy = CC08EC672F9522F800206D2F /* PBXContainerItemProxy */;
 		};
 		CC08EC722F9522F800206D2F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CC08EC582F9522F600206D2F /* BookLoop */;
+			target = CC08EC582F9522F600206D2F /* AuDioHD */;
 			targetProxy = CC08EC712F9522F800206D2F /* PBXContainerItemProxy */;
 		};
 		CCC48EA92FA6AB340003458B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CCC48E9A2FA6AB330003458B /* BookLoop Watch App Watch App */;
+			target = CCC48E9A2FA6AB330003458B /* AuDioHD Watch App */;
 			targetProxy = CCC48EA82FA6AB340003458B /* PBXContainerItemProxy */;
 		};
 		CCC48EB32FA6AB340003458B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CCC48E9A2FA6AB330003458B /* BookLoop Watch App Watch App */;
+			target = CCC48E9A2FA6AB330003458B /* AuDioHD Watch App */;
 			targetProxy = CCC48EB22FA6AB340003458B /* PBXContainerItemProxy */;
 		};
 		CCC48EBA2FA6AB350003458B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CCC48E9A2FA6AB330003458B /* BookLoop Watch App Watch App */;
+			target = CCC48E9A2FA6AB330003458B /* AuDioHD Watch App */;
 			targetProxy = CCC48EB92FA6AB350003458B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -605,13 +605,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = BookLoop.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "BookLoop Widget/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "BookLoop Widget";
+				INFOPLIST_FILE = "AuDioHD Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -620,7 +620,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop.watchkitapp.BookLoop-Widget";
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.AuDioHD.watchkitapp.AuDioHD-Widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -639,13 +639,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = BookLoop.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "BookLoop Widget/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "BookLoop Widget";
+				INFOPLIST_FILE = "AuDioHD Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -654,7 +654,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop.watchkitapp.BookLoop-Widget";
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.AuDioHD.watchkitapp.AuDioHD-Widget";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -798,8 +798,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = BookLoop/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BookLoop;
+				INFOPLIST_FILE = AuDioHD/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AuDioHD;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -816,7 +816,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoop;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -846,8 +846,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = BookLoop/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BookLoop;
+				INFOPLIST_FILE = AuDioHD/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AuDioHD;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -864,7 +864,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoop;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHD;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -892,7 +892,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoopTests;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -902,7 +902,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BookLoop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BookLoop";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AuDioHD.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AuDioHD";
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Debug;
@@ -918,7 +918,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoopTests;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -928,7 +928,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BookLoop.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BookLoop";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AuDioHD.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AuDioHD";
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Release;
@@ -943,7 +943,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoopUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -953,7 +953,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = BookLoop;
+				TEST_TARGET_NAME = AuDioHD;
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Debug;
@@ -968,7 +968,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoopUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -978,7 +978,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = BookLoop;
+				TEST_TARGET_NAME = AuDioHD;
 				XROS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Release;
@@ -988,21 +988,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = BookLoop.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "BookLoop Watch App";
+				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Watch App";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = Dan.BookLoop;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = Dan.AuDioHD;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoop.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHD.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1022,21 +1022,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = BookLoop.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "BookLoop Watch App";
+				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Watch App";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = Dan.BookLoop;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = Dan.AuDioHD;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.BookLoop.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHD.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1061,7 +1061,7 @@
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop-Watch-App-Watch-AppTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.AuDioHD-Watch-App-Watch-AppTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1070,7 +1070,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BookLoop Watch App Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BookLoop Watch App Watch App";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AuDioHD Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AuDioHD Watch App";
 				WATCHOS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Debug;
@@ -1084,7 +1084,7 @@
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop-Watch-App-Watch-AppTests";
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.AuDioHD-Watch-App-Watch-AppTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1093,7 +1093,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BookLoop Watch App Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BookLoop Watch App Watch App";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AuDioHD Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/AuDioHD Watch App";
 				VALIDATE_PRODUCT = YES;
 				WATCHOS_DEPLOYMENT_TARGET = 26.4;
 			};
@@ -1107,7 +1107,7 @@
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop-Watch-App-Watch-AppUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.AuDioHD-Watch-App-Watch-AppUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1116,7 +1116,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				TEST_TARGET_NAME = "BookLoop Watch App Watch App";
+				TEST_TARGET_NAME = "AuDioHD Watch App";
 				WATCHOS_DEPLOYMENT_TARGET = 26.4;
 			};
 			name = Debug;
@@ -1129,7 +1129,7 @@
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0.2;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.BookLoop-Watch-App-Watch-AppUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.AuDioHD-Watch-App-Watch-AppUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1138,7 +1138,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				TEST_TARGET_NAME = "BookLoop Watch App Watch App";
+				TEST_TARGET_NAME = "AuDioHD Watch App";
 				VALIDATE_PRODUCT = YES;
 				WATCHOS_DEPLOYMENT_TARGET = 26.4;
 			};
@@ -1147,7 +1147,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		CC00BC652FA6B66500323F38 /* Build configuration list for PBXNativeTarget "BookLoop WidgetExtension" */ = {
+		CC00BC652FA6B66500323F38 /* Build configuration list for PBXNativeTarget "AuDioHD WidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CC00BC632FA6B66500323F38 /* Debug */,
@@ -1165,7 +1165,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CC08EC7A2F9522F800206D2F /* Build configuration list for PBXNativeTarget "BookLoop" */ = {
+		CC08EC7A2F9522F800206D2F /* Build configuration list for PBXNativeTarget "AuDioHD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CC08EC7B2F9522F800206D2F /* Debug */,
@@ -1174,7 +1174,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CC08EC7D2F9522F800206D2F /* Build configuration list for PBXNativeTarget "BookLoopTests" */ = {
+		CC08EC7D2F9522F800206D2F /* Build configuration list for PBXNativeTarget "AuDioHDTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CC08EC7E2F9522F800206D2F /* Debug */,
@@ -1183,7 +1183,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CC08EC802F9522F800206D2F /* Build configuration list for PBXNativeTarget "BookLoopUITests" */ = {
+		CC08EC802F9522F800206D2F /* Build configuration list for PBXNativeTarget "AuDioHDUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CC08EC812F9522F800206D2F /* Debug */,
@@ -1192,7 +1192,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CCC48EBC2FA6AB350003458B /* Build configuration list for PBXNativeTarget "BookLoop Watch App Watch App" */ = {
+		CCC48EBC2FA6AB350003458B /* Build configuration list for PBXNativeTarget "AuDioHD Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CCC48EBD2FA6AB350003458B /* Debug */,
@@ -1201,7 +1201,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CCC48EBF2FA6AB350003458B /* Build configuration list for PBXNativeTarget "BookLoop Watch App Watch AppTests" */ = {
+		CCC48EBF2FA6AB350003458B /* Build configuration list for PBXNativeTarget "AuDioHD Watch AppTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CCC48EC02FA6AB350003458B /* Debug */,
@@ -1210,7 +1210,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CCC48EC22FA6AB350003458B /* Build configuration list for PBXNativeTarget "BookLoop Watch App Watch AppUITests" */ = {
+		CCC48EC22FA6AB350003458B /* Build configuration list for PBXNativeTarget "AuDioHD Watch AppUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CCC48EC32FA6AB350003458B /* Debug */,

@@ -1830,10 +1830,10 @@ struct PlaylistView: View {
 
 private struct Persistence {
     private let defaults = UserDefaults.standard
-    private let bookmarkKey = "BookLoop.selection.bookmark"
-    private let progressKey = "BookLoop.progress.dictionary"
-    private let speedKey = "BookLoop.playback.speed.dictionary"
-    private let lastTrackKey = "BookLoop.lastTrack.dictionary"
+    private let bookmarkKey = "AuDioHD.selection.bookmark"
+    private let progressKey = "AuDioHD.progress.dictionary"
+    private let speedKey = "AuDioHD.playback.speed.dictionary"
+    private let lastTrackKey = "AuDioHD.lastTrack.dictionary"
     
     func saveLastTrack(for folderKey: String, trackId: String) {
         var dict = defaults.dictionary(forKey: lastTrackKey) as? [String: String] ?? [:]

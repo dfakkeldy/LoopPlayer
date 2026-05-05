@@ -1,13 +1,13 @@
 //
-//  BookLoopUITestsLaunchTests.swift
-//  BookLoopUITests
+//  AuDioHDUITestsLaunchTests.swift
+//  AuDioHDUITests
 //
 //  Created by Dan Fakkeldy on 2026-04-19.
 //
 
 import XCTest
 
-final class BookLoopUITestsLaunchTests: XCTestCase {
+final class AuDioHDUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
