@@ -77,6 +77,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     private var player: AVPlayer?
     private var endObserver: NSObjectProtocol?
     private var timeObserver: Any?
+    private var chapterBoundaryObserver: Any?
     private var interruptionObserver: NSObjectProtocol?
 
     // Background task used while paused to reduce the chance of the app being
@@ -206,6 +207,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         // `deinit` is not actor-isolated; keep cleanup synchronous.
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         if let timeObserver, let player { player.removeTimeObserver(timeObserver) }
+        if let chapterBoundaryObserver, let player { player.removeTimeObserver(chapterBoundaryObserver) }
         if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
         endBackgroundTask()
         stopAllSecurityScope()
@@ -233,8 +235,9 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         if let currentTrackURL = tracks.indices.contains(currentIndex) ? tracks[currentIndex].url : nil {
             persistence.saveOrder(for: currentTrackURL.absoluteString, ids: chapters.map { $0.id })
         }
+        installChapterBoundaryObservers()
     }
-    
+
     func toggleTrackEnabled(at index: Int) {
         tracks[index].isEnabled.toggle()
         if let folderURL = folderURL {
@@ -251,6 +254,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             states[chapters[index].id] = chapters[index].isEnabled
             persistence.saveEnabledState(for: currentTrackURL.absoluteString, states: states)
         }
+        installChapterBoundaryObservers()
     }
 
     func resetPlaylist() {
@@ -266,6 +270,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                 persistence.saveEnabledState(for: currentTrackURL.absoluteString, states: states)
             }
             updateCurrentChapterFromPlayerTime()
+            installChapterBoundaryObservers()
         } else {
             let currentURL = tracks.indices.contains(currentIndex) ? tracks[currentIndex].url : nil
             tracks.sort { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
@@ -591,7 +596,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     func skipBackward30() {
         guard let player else { return }
         let current = player.currentTime().seconds
-        let target = max(0, current - 30)
+        let target = max(0, current - 30 * Double(speed))
         isManualSeeking = true
         player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             DispatchQueue.main.async {
@@ -606,7 +611,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         guard let player else { return }
         let current = player.currentTime().seconds
         let duration = durationSeconds ?? 0
-        let target = min(duration, current + 30)
+        let target = min(duration, current + 30 * Double(speed))
         isManualSeeking = true
         player.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             DispatchQueue.main.async {
@@ -687,6 +692,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
         if let endObserver { NotificationCenter.default.removeObserver(endObserver); self.endObserver = nil }
         if let timeObserver, let player { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
+        removeChapterBoundaryObserver()
         player = nil
 
         stopCurrentFileSecurityScopeIfNeeded()
@@ -724,6 +730,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         // Clean old observers
         if let endObserver { NotificationCenter.default.removeObserver(endObserver); self.endObserver = nil }
         if let timeObserver, let player { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
+        removeChapterBoundaryObserver()
 
         // For Files/iCloud-provider URLs:
         // - keep the security scope open BEFORE touching the file (creating items, loading duration, etc.)
@@ -795,8 +802,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         ) { [weak self] _ in
             DispatchQueue.main.async {
                 self?.updateNowPlayingElapsedTime()
-                self?.updateProgressFromPlayer()
                 self?.updateCurrentChapterFromPlayerTime()
+                self?.updateProgressFromPlayer()
                 self?.enforceEnabledState()
                 self?.applyChapterLoopIfNeeded()
             }
@@ -831,6 +838,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                 if let idx = currentChapterIndex {
                     let c = chapters[idx]
                     let targetSeconds = c.startSeconds + 0.05
+                    progressFraction = 0
                     player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                         DispatchQueue.main.async {
                             guard let self else { return }
@@ -852,6 +860,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         }
 
         if loopModeOn {
+            progressFraction = 0
             player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                 DispatchQueue.main.async {
                     guard let self else { return }
@@ -1086,21 +1095,32 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         }
 
         let elapsed = player.currentTime().seconds
-        
-        if chapters.count >= 2, let idx = currentChapterIndex {
-            let c = chapters[idx]
-            let chapterDuration = c.endSeconds - c.startSeconds
-            let chapterElapsed = elapsed - c.startSeconds
-            
-            if chapterElapsed.isFinite, chapterDuration.isFinite, chapterDuration > 0 {
-        let frac = min(1, max(0, chapterElapsed / chapterDuration))
-        let didChange = abs(progressFraction - frac) > 0.005
-        progressFraction = frac
-        let remaining = max(0, chapterDuration - chapterElapsed) / Double(speed)
-        progressText = "-\(formatTime(remaining))"
-        elapsedText = formatTime(max(0, chapterElapsed) / Double(speed))
-        if didChange { syncToWatch() }
-        return
+
+        if chapters.count >= 2 {
+            if let idx = currentChapterIndex {
+                let c = chapters[idx]
+                if elapsed.isFinite, elapsed < c.startSeconds - 0.1 || elapsed >= c.endSeconds + 0.1 {
+                    updateCurrentChapterFromPlayerTime()
+                }
+            } else {
+                updateCurrentChapterFromPlayerTime()
+            }
+
+            if let idx = currentChapterIndex {
+                let c = chapters[idx]
+                let chapterDuration = c.endSeconds - c.startSeconds
+                let chapterElapsed = elapsed - c.startSeconds
+
+                if chapterElapsed.isFinite, chapterDuration.isFinite, chapterDuration > 0 {
+                    let frac = min(1, max(0, chapterElapsed / chapterDuration))
+                    let didChange = abs(progressFraction - frac) > 0.005
+                    progressFraction = frac
+                    let remaining = max(0, chapterDuration - chapterElapsed) / Double(speed)
+                    progressText = "-\(formatTime(remaining))"
+                    elapsedText = formatTime(max(0, chapterElapsed) / Double(speed))
+                    if didChange { syncToWatch() }
+                    return
+                }
             }
         }
 
@@ -1308,10 +1328,12 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         if built.count >= 2 {
             chapters = built
             updateCurrentChapterFromPlayerTime()
+            installChapterBoundaryObservers()
         } else {
             chapters = []
             currentChapterIndex = nil
             currentSubtitle = ""
+            removeChapterBoundaryObserver()
             updateNowPlayingInfo(isPaused: !isPlaying)
             syncToWatch()
         }
@@ -1362,6 +1384,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             if loopModeOn {
                 // Loop the CURRENT chapter.
                 isSeekingForChapterBoundary = true
+                progressFraction = 0
                 let targetSeconds = c.startSeconds + 0.05
                 player.seek(to: CMTime(seconds: targetSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                     self?.resumeAfterSeek()
@@ -1369,12 +1392,12 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             } else {
                 if let nextIdx = findNextEnabledChapterIndex(after: idx) {
                     let nextC = chapters[nextIdx]
-                    // If the next chapter starts exactly where this one ends (or very close), just let it play naturally.
                     if abs(nextC.startSeconds - c.endSeconds) < 1.0 && nextIdx == idx + 1 {
-                        // Do nothing! Let AVPlayer seamlessly continue into the next chapter.
+                        // Contiguous chapters — let AVPlayer seamlessly continue.
                     } else {
                         // Skip disabled chapters or gaps.
                         isSeekingForChapterBoundary = true
+                        progressFraction = 0
                         player.seek(to: CMTime(seconds: nextC.startSeconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                             self?.resumeAfterSeek()
                         }
@@ -1390,6 +1413,33 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         }
     }
 
+    private func removeChapterBoundaryObserver() {
+        if let chapterBoundaryObserver, let player {
+            player.removeTimeObserver(chapterBoundaryObserver)
+        }
+        chapterBoundaryObserver = nil
+    }
+
+    private func installChapterBoundaryObservers() {
+        removeChapterBoundaryObserver()
+        guard let player, chapters.count >= 2 else { return }
+
+        let times: [NSValue] = chapters.compactMap { c in
+            guard c.isEnabled else { return nil }
+            let boundary = c.endSeconds - 0.5
+            guard boundary > 0, boundary.isFinite else { return nil }
+            return NSValue(time: CMTime(seconds: boundary, preferredTimescale: 600))
+        }
+        guard !times.isEmpty else { return }
+
+        chapterBoundaryObserver = player.addBoundaryTimeObserver(
+            forTimes: times,
+            queue: .main
+        ) { [weak self] in
+            self?.applyChapterLoopIfNeeded()
+        }
+    }
+
     private func resumeAfterSeek() {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -1402,6 +1452,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                 self.updateNowPlayingInfo(isPaused: true)
             }
             self.updateNowPlayingElapsedTime()
+            self.updateCurrentChapterFromPlayerTime()
             self.updateProgressFromPlayer()
         }
     }
@@ -1589,10 +1640,7 @@ struct ContentView: View {
                     .monospacedDigit()
                 
                 Slider(
-                    value: Binding(
-                        get: { isScrubbing ? scrubFraction : model.progressFraction },
-                        set: { newValue in scrubFraction = newValue }
-                    ),
+                    value: $scrubFraction,
                     in: 0...1,
                     onEditingChanged: { editing in
                         isScrubbing = editing
@@ -1603,6 +1651,11 @@ struct ContentView: View {
                 )
                 .frame(maxWidth: .infinity)
                 .tint(.primary)
+                .onChange(of: model.progressFraction) { _, newValue in
+                    if !isScrubbing {
+                        scrubFraction = newValue
+                    }
+                }
                 
                 Text(model.progressText)
                     .customFont(.footnote)
