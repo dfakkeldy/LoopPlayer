@@ -75,7 +75,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     }
 
     private func loadPersistedSlots() {
-        let defaults = UserDefaults(suiteName: "group.com.bookloop")
+        let defaults = UserDefaults(suiteName: "group.com.audiohd")
         if let raw = defaults?.string(forKey: "watchPage1") {
             page1Slots = padded(parseSlots(raw))
         }
@@ -98,7 +98,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
         DispatchQueue.main.async {
-            let defaults = UserDefaults(suiteName: "group.com.bookloop")
+            let defaults = UserDefaults(suiteName: "group.com.audiohd")
             if let crownAction = applicationContext["crownAction"] as? String {
                 defaults?.set(crownAction, forKey: "crownAction")
             }
@@ -204,7 +204,7 @@ private struct ToggleTraitModifier: ViewModifier {
 
 struct ContentView: View {
     @State private var viewModel = WatchViewModel()
-    @AppStorage("crownAction", store: UserDefaults(suiteName: "group.com.bookloop")) private var crownAction = "volume"
+    @AppStorage("crownAction", store: UserDefaults(suiteName: "group.com.audiohd")) private var crownAction = "volume"
     @State private var crownAccumulator: Double = 0.0
     @State private var selectedPage: Int = 0
     @FocusState private var isFocused: Bool

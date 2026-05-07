@@ -54,7 +54,7 @@ struct TogglePlaybackIntent: AppIntent {
         }
         
         // Optimistically toggle state in UserDefaults for immediate UI update
-        let defaults = UserDefaults(suiteName: "group.com.bookloop")
+        let defaults = UserDefaults(suiteName: "group.com.audiohd")
         let currentIsPlaying = defaults?.bool(forKey: "isPlaying") ?? false
         defaults?.set(!currentIsPlaying, forKey: "isPlaying")
         WidgetCenter.shared.reloadAllTimelines()

@@ -19,7 +19,7 @@ struct Provider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let defaults = UserDefaults(suiteName: "group.com.bookloop")
+        let defaults = UserDefaults(suiteName: "group.com.audiohd")
         let title = defaults?.string(forKey: "title") ?? "No track"
         let isPlaying = defaults?.bool(forKey: "isPlaying") ?? false
         let progressFraction = defaults?.double(forKey: "progressFraction") ?? 0.0
@@ -30,7 +30,7 @@ struct Provider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> ()) {
-        let defaults = UserDefaults(suiteName: "group.com.bookloop")
+        let defaults = UserDefaults(suiteName: "group.com.audiohd")
         let title = defaults?.string(forKey: "title") ?? "No track"
         let isPlaying = defaults?.bool(forKey: "isPlaying") ?? false
         let progressFraction = defaults?.double(forKey: "progressFraction") ?? 0.0
@@ -93,7 +93,7 @@ struct AuDioHD_WidgetEntryView : View {
             }
         }
         .containerBackground(.fill.tertiary, for: .widget)
-        .widgetURL(URL(string: "bookloop://"))
+        .widgetURL(URL(string: "audiohd://"))
     }
 }
 
