@@ -20,7 +20,7 @@ import WatchConnectivity
 // MARK: - Model
 
 @Observable
-final class PlayerModel: NSObject, WCSessionDelegate {
+final class PlayerModel: NSObject, WCSessionDelegate, AVAudioPlayerDelegate {
     struct Track: Identifiable, Equatable {
         var id: String { url.absoluteString }
         let url: URL
@@ -64,6 +64,20 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     private var isManualSeeking: Bool = false
     
     private var pauseTimestamp: Date? = nil
+
+    // MARK: Bookmarks
+    var bookmarks: [Bookmark] = []
+    private(set) var isPlayingVoiceMemo: Bool = false
+    /// 0...1 progress of the currently playing voice memo, for the overlay UI.
+    private(set) var voiceMemoProgress: Double = 0.0
+    @ObservationIgnored private var voiceMemoPlayer: AVAudioPlayer?
+    @ObservationIgnored private var voiceMemoProgressTimer: Timer?
+
+    /// Boundary observer that fires when playback hits a bookmark with a memo.
+    @ObservationIgnored private var bookmarkBoundaryObserver: Any?
+    /// Track timestamps of recently triggered bookmarks to avoid retrigger loops.
+    @ObservationIgnored private var lastTriggeredBookmarkID: UUID?
+    @ObservationIgnored private var lastTriggeredAtPlayerSecond: Double = -1
 
     // iOS 26: avoid UIScreen.main usage; set from SwiftUI environment.
     private var displayScale: CGFloat = 2.0
@@ -113,6 +127,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         speed = 1.25
         super.init()
         UserDefaults.standard.register(defaults: [
+            "playBookmarksInline": true,
             "isRewindEnabled": false,
             "rewindPauseSecondsThreshold": 30,
             "rewindAmountAfterSeconds": 10,
@@ -796,7 +811,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         // Load the specific speed for this book
         if let key = folderURL?.absoluteString {
             speed = persistence.getSpeed(for: key) ?? 1.25
-            loopModeOn = persistence.getLoopMode(for: key) ?? true
+            loopModeOn = persistence.getLoopMode(for: key) ?? false
         } else {
             speed = 1.25
             loopModeOn = true
@@ -885,6 +900,9 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                 self?.updateProgressFromPlayer()
                 self?.enforceEnabledState()
                 self?.applyChapterLoopIfNeeded()
+                if let t = self?.player?.currentTime().seconds {
+                    self?.checkBookmarkVoiceMemoTrigger(at: t)
+                }
             }
         }
     }
@@ -1635,6 +1653,246 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         }
     }
 
+    // MARK: - Bookmarks API
+
+    /// Key used to store bookmarks for the currently loaded book.
+    private var bookmarksStorageKey: String? {
+        if let f = folderURL?.absoluteString { return f }
+        if tracks.indices.contains(currentIndex) { return tracks[currentIndex].id }
+        return nil
+    }
+
+    func loadBookmarksForCurrentBook() {
+        guard let key = bookmarksStorageKey else {
+            bookmarks = []
+            installBookmarkBoundaryObserver()
+            return
+        }
+        bookmarks = persistence.loadBookmarks(for: key).sorted { $0.timestamp < $1.timestamp }
+        installBookmarkBoundaryObserver()
+    }
+
+    private func persistBookmarks() {
+        guard let key = bookmarksStorageKey else { return }
+        persistence.saveBookmarks(bookmarks, for: key)
+    }
+
+    /// Bookmarks scoped to the currently playing track (if any), sorted.
+    var currentTrackBookmarks: [Bookmark] {
+        let trackId = tracks.indices.contains(currentIndex) ? tracks[currentIndex].id : nil
+        return bookmarks
+            .filter { $0.trackId == nil || $0.trackId == trackId }
+            .sorted { $0.timestamp < $1.timestamp }
+    }
+
+    @discardableResult
+    func addBookmarkAtCurrentTime() -> Bookmark? {
+        guard let player else { return nil }
+        let t = player.currentTime().seconds
+        guard t.isFinite else { return nil }
+        let trackId = tracks.indices.contains(currentIndex) ? tracks[currentIndex].id : nil
+        // Auto-numbered default title scoped to the current track.
+        let scopedCount = bookmarks.filter { $0.trackId == nil || $0.trackId == trackId }.count
+        let bm = Bookmark(
+            title: "Bookmark \(scopedCount + 1)",
+            folderKey: folderURL?.absoluteString,
+            trackId: trackId,
+            timestamp: t
+        )
+        bookmarks.append(bm)
+        bookmarks.sort { $0.timestamp < $1.timestamp }
+        persistBookmarks()
+        installBookmarkBoundaryObserver()
+        return bm
+    }
+
+    func updateBookmark(id: UUID, title: String, timestamp: TimeInterval, note: String?, voiceMemoFileName: String?) {
+        guard let idx = bookmarks.firstIndex(where: { $0.id == id }) else { return }
+        bookmarks[idx].title = title
+        bookmarks[idx].timestamp = timestamp
+        bookmarks[idx].note = note
+        bookmarks[idx].voiceMemoFileName = voiceMemoFileName
+        bookmarks.sort { $0.timestamp < $1.timestamp }
+        persistBookmarks()
+        installBookmarkBoundaryObserver()
+    }
+
+    func toggleBookmarkEnabled(id: UUID) {
+        guard let idx = bookmarks.firstIndex(where: { $0.id == id }) else { return }
+        bookmarks[idx].isEnabled.toggle()
+        persistBookmarks()
+        installBookmarkBoundaryObserver()
+    }
+
+    /// Reorder bookmarks. Only meaningful for bookmarks that share the same
+    /// scope (e.g. the current track), since their natural ordering is by
+    /// timestamp. Persists the new ordering and refreshes the boundary observer.
+    func moveBookmarks(from source: IndexSet, to destination: Int) {
+        bookmarks.move(fromOffsets: source, toOffset: destination)
+        persistBookmarks()
+        installBookmarkBoundaryObserver()
+    }
+
+    func deleteBookmark(id: UUID) {
+
+        if let idx = bookmarks.firstIndex(where: { $0.id == id }) {
+            // Clean up the on-disk voice memo if any.
+            if let url = bookmarks[idx].voiceMemoURL(in: folderURL) {
+                try? FileManager.default.removeItem(at: url)
+            }
+            bookmarks.remove(at: idx)
+            persistBookmarks()
+            installBookmarkBoundaryObserver()
+        }
+    }
+
+    /// Install a boundary observer that fires precisely when playback crosses
+    /// any bookmark with an attached voice memo, in addition to the
+    /// periodic-observer-based safety net. Boundary observers are far more
+    /// precise than 0.25s polling.
+    private func installBookmarkBoundaryObserver() {
+        if let bookmarkBoundaryObserver, let player {
+            player.removeTimeObserver(bookmarkBoundaryObserver)
+        }
+        bookmarkBoundaryObserver = nil
+        guard let player else { return }
+        let trackId = tracks.indices.contains(currentIndex) ? tracks[currentIndex].id : nil
+        let times: [NSValue] = bookmarks.compactMap { bm in
+            guard bm.voiceMemoFileName != nil else { return nil }
+            if let bt = bm.trackId, let ct = trackId, bt != ct { return nil }
+            guard bm.timestamp.isFinite, bm.timestamp > 0 else { return nil }
+            return NSValue(time: CMTime(seconds: bm.timestamp, preferredTimescale: 600))
+        }
+        guard !times.isEmpty else { return }
+        bookmarkBoundaryObserver = player.addBoundaryTimeObserver(
+            forTimes: times,
+            queue: .main
+        ) { [weak self] in
+            guard let self, let t = self.player?.currentTime().seconds else { return }
+            self.checkBookmarkVoiceMemoTrigger(at: t)
+        }
+    }
+
+    /// Jump playback to a bookmark's timestamp (without firing the voice memo overlay).
+    func jumpToBookmark(_ bm: Bookmark) {
+        // Suppress retrigger when the user manually navigates to a bookmark.
+        lastTriggeredBookmarkID = bm.id
+        lastTriggeredAtPlayerSecond = bm.timestamp
+        seek(toSeconds: bm.timestamp)
+    }
+
+    // MARK: Voice Memo Interception
+
+    /// Called from the boundary + periodic time observers. Detects when
+    /// playback crosses a bookmark with an attached voice memo and intercepts
+    /// playback (when `playBookmarksInline` is enabled).
+    private func checkBookmarkVoiceMemoTrigger(at currentSeconds: Double) {
+        guard !isPlayingVoiceMemo, isPlaying, !isManualSeeking else { return }
+        guard currentSeconds.isFinite else { return }
+        // Honor user preference.
+        guard UserDefaults.standard.bool(forKey: "playBookmarksInline") else { return }
+
+        let trackId = tracks.indices.contains(currentIndex) ? tracks[currentIndex].id : nil
+
+        // Tolerance window — must accommodate the 0.25s periodic observer plus
+        // any rate scaling.
+        let window: Double = 0.75
+        let candidates = bookmarks.filter { bm in
+            guard bm.isEnabled else { return false }
+            guard bm.voiceMemoFileName != nil else { return false }
+            if let bt = bm.trackId, let ct = trackId, bt != ct { return false }
+            let delta = currentSeconds - bm.timestamp
+            return delta >= -0.1 && delta <= window
+        }
+
+        guard let bm = candidates.max(by: { $0.timestamp < $1.timestamp }) else { return }
+
+        // Suppress duplicate firings for the same bookmark.
+        if lastTriggeredBookmarkID == bm.id,
+           abs(currentSeconds - lastTriggeredAtPlayerSecond) < 5 {
+            return
+        }
+        guard let memoURL = bm.voiceMemoURL(in: folderURL),
+              FileManager.default.fileExists(atPath: memoURL.path) else { return }
+
+        lastTriggeredBookmarkID = bm.id
+        lastTriggeredAtPlayerSecond = currentSeconds
+        startVoiceMemoPlayback(url: memoURL)
+    }
+
+    private func startVoiceMemoPlayback(url: URL) {
+        // Pause the main audiobook player without changing isPlaying logic.
+        player?.pause()
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio, options: [])
+            try session.setActive(true)
+
+            let p = try AVAudioPlayer(contentsOf: url)
+            p.delegate = self
+            p.volume = 1.0
+            p.prepareToPlay()
+            voiceMemoPlayer = p
+            isPlayingVoiceMemo = true
+            voiceMemoProgress = 0.0
+            p.play()
+            // AVAudioPlayer doesn't have a built-in time observer; drive the
+            // overlay ProgressView with a Timer that ticks while the memo plays.
+            voiceMemoProgressTimer?.invalidate()
+            voiceMemoProgressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+                guard let self, let player = self.voiceMemoPlayer, player.duration > 0 else { return }
+                self.voiceMemoProgress = min(1.0, max(0.0, player.currentTime / player.duration))
+            }
+            // Reflect paused state in Now Playing.
+            updateNowPlayingInfo(isPaused: true)
+
+        } catch {
+            print("Voice memo playback error: \(error)")
+            // Fall back to resuming main audio.
+            isPlayingVoiceMemo = false
+            voiceMemoPlayer = nil
+            if isPlaying {
+                player?.playImmediately(atRate: speed)
+            }
+        }
+    }
+
+    func stopVoiceMemo() {
+        voiceMemoPlayer?.stop()
+        voiceMemoProgressTimer?.invalidate()
+        voiceMemoProgressTimer = nil
+        voiceMemoProgress = 0.0
+        voiceMemoPlayer = nil
+        isPlayingVoiceMemo = false
+
+        player?.play()
+        applySpeedToCurrentItem()
+        updateNowPlayingInfo(isPaused: false)
+    }
+
+    // AVAudioPlayerDelegate
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.voiceMemoProgressTimer?.invalidate()
+            self.voiceMemoProgressTimer = nil
+            self.voiceMemoProgress = 0.0
+            self.voiceMemoPlayer = nil
+            self.isPlayingVoiceMemo = false
+
+            // Seamlessly resume the audiobook.
+            if self.isPlaying {
+                self.player?.playImmediately(atRate: self.speed)
+                self.applySpeedToCurrentItem()
+                self.updateNowPlayingInfo(isPaused: false)
+            }
+        }
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        audioPlayerDidFinishPlaying(player, successfully: false)
+    }
+
     private func persistSelection(url: URL) {
         // Refresh security scope for the new selection.
         stopSelectionSecurityScopeIfNeeded()
@@ -1643,6 +1901,9 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
         // Save security-scoped bookmark so it restores after relaunch.
         persistence.saveBookmark(url: url)
+
+        // Load bookmarks for this book.
+        loadBookmarksForCurrentBook()
     }
 }
 
@@ -1731,12 +1992,16 @@ struct ContentView: View {
     @State private var showingSettings = false
     @State private var isScrubbing = false
     @State private var scrubFraction: Double = 0.0
+    @State private var editingBookmarkID: UUID? = nil
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         @Bindable var model = model
 
         NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+            ZStack {
+            // MARK: Primary player UI (single block — gets the gray-out treatment)
             VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .center, spacing: 12) {
                 if let image = model.thumbnailImage {
@@ -1901,7 +2166,48 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 24)
-            
+            }
+            // Apply gray-out + opacity to the ENTIRE primary player block at once.
+            .grayscale(model.isPlayingVoiceMemo ? 1.0 : 0.0)
+            .opacity(model.isPlayingVoiceMemo ? 0.5 : 1.0)
+            .allowsHitTesting(!model.isPlayingVoiceMemo)
+            .animation(.easeInOut(duration: 0.2), value: model.isPlayingVoiceMemo)
+
+            // Single floating "Playing Voice Memo" badge centered over the
+            // grayed-out player block.
+            if model.isPlayingVoiceMemo {
+                HStack(spacing: 10) {
+                    Image(systemName: "mic.fill")
+                        .foregroundStyle(.red)
+                    Text("Playing Voice Memo")
+                        .customFont(.headline)
+                    Button {
+                        model.stopVoiceMemo()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Stop voice memo")
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay(Capsule().stroke(.quaternary, lineWidth: 1))
+                .shadow(color: .black.opacity(0.2), radius: 12, y: 4)
+                .transition(.opacity.combined(with: .scale))
+                .overlay(alignment: .bottom) {
+                    ProgressView(value: model.voiceMemoProgress)
+                        .progressViewStyle(.linear)
+                        .frame(width: 180)
+                        .padding(.bottom, -22)
+                }
+            }
+
+            }
+            .animation(.easeInOut(duration: 0.2), value: model.isPlayingVoiceMemo)
+
             // Custom Bottom Toolbar to avoid UIKitToolbar errors
             VStack(spacing: 0) {
                 Divider()
@@ -1939,14 +2245,18 @@ struct ContentView: View {
                     Spacer()
 
                     Button {
-                        showingFolderPicker = true
+                        if let bm = model.addBookmarkAtCurrentTime() {
+                            editingBookmarkID = bm.id
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        }
                     } label: {
-                        Image(systemName: "folder")
+                        Image(systemName: "bookmark.fill")
                             .font(.title2)
                             .frame(width: 44, height: 44)
                             .contentShape(Rectangle())
                     }
-                    .accessibilityLabel("Open folder")
+                    .accessibilityLabel("Add bookmark at current time")
+                    .disabled(model.tracks.isEmpty)
 
                     Spacer()
 
@@ -1959,18 +2269,6 @@ struct ContentView: View {
                             .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Playlist")
-
-                    Spacer()
-
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.title2)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .accessibilityLabel("Settings")
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 12)
@@ -1981,6 +2279,25 @@ struct ContentView: View {
         .environment(\.font, appFont == "Helvetica" ? .body : .custom(appFont, size: 17, relativeTo: .body))
         .padding(.horizontal)
         .padding(.top)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showingFolderPicker = true
+                } label: {
+                    Image(systemName: "folder")
+                }
+                .accessibilityLabel("Open folder")
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("Settings")
+            }
+        }
         .sheet(isPresented: $showingFolderPicker) {
             FolderPicker { url in
                 showingFolderPicker = false
@@ -1992,6 +2309,12 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(model: model)
+        }
+        .sheet(item: Binding(
+            get: { editingBookmarkID.map { IdentifiableUUID(id: $0) } },
+            set: { editingBookmarkID = $0?.id }
+        )) { wrapper in
+            EditBookmarkView(model: model, bookmarkID: wrapper.id)
         }
         .onAppear {
             // Configure remote commands early so the Watch/Now Playing UI is stable once audio starts.
@@ -2041,6 +2364,12 @@ struct SettingsView: View {
                     NavigationLink("Smart Rewind") {
                         SmartRewindSettingsView()
                     }
+                }
+                Section(footer: Text("When enabled, voice memos attached to bookmarks are played automatically when the audiobook reaches that timestamp.")) {
+                    Toggle("Play Bookmarks Inline", isOn: Binding(
+                        get: { UserDefaults.standard.object(forKey: "playBookmarksInline") as? Bool ?? true },
+                        set: { UserDefaults.standard.set($0, forKey: "playBookmarksInline") }
+                    ))
                 }
             }
             .navigationTitle("Settings")
@@ -2173,11 +2502,43 @@ private struct InlineStepperRow: View {
     }
 }
 
+/// A wrapper to make UUID Identifiable for use with `.sheet(item:)`.
+struct IdentifiableUUID: Identifiable, Hashable {
+    let id: UUID
+}
+
+/// A unified row in the playlist that mixes chapters, tracks, and bookmarks
+/// in chronological order.
+private enum PlaylistRow: Identifiable {
+    case chapter(index: Int, chapter: PlayerModel.Chapter)
+    case track(index: Int, track: PlayerModel.Track)
+    case bookmark(Bookmark)
+
+    var id: String {
+        switch self {
+        case .chapter(_, let c): return "chapter-\(c.id)"
+        case .track(_, let t):   return "track-\(t.id)"
+        case .bookmark(let b):   return "bookmark-\(b.id.uuidString)"
+        }
+    }
+
+    var sortKey: Double {
+        switch self {
+        case .chapter(_, let c): return c.startSeconds
+        case .track(let i, _):   return Double(i) // track ordering
+        case .bookmark(let b):   return b.timestamp
+        }
+    }
+}
+
 struct PlaylistView: View {
     @Bindable var model: PlayerModel
     @AppStorage("appFont") private var appFont = "Helvetica"
     @Environment(\.dismiss) private var dismiss
-    @State private var editMode: EditMode = .active
+    @State private var editingBookmarkID: UUID? = nil
+
+    private enum PlaylistTab: Hashable { case items, bookmarks }
+    @State private var selectedTab: PlaylistTab = .items
 
     private func formatDuration(_ seconds: Double) -> String {
         let h = Int(seconds) / 3600
@@ -2189,44 +2550,81 @@ struct PlaylistView: View {
         }
     }
 
+    private func formatHMS(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds.rounded(.down)))
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        if h > 0 { return String(format: "%d:%02d:%02d", h, m, s) }
+        return String(format: "%02d:%02d", m, s)
+    }
+
+    /// Indices into `model.bookmarks` for the bookmarks that are visible in the
+    /// current track scope (i.e. those returned by `currentTrackBookmarks`).
+    private var visibleBookmarkIndices: [Int] {
+        let trackId = model.tracks.indices.contains(model.currentIndex) ? model.tracks[model.currentIndex].id : nil
+        return model.bookmarks.indices.filter { i in
+            let bm = model.bookmarks[i]
+            return bm.trackId == nil || bm.trackId == trackId
+        }
+    }
+
     var body: some View {
         NavigationStack {
-            List {
-                if model.chapters.count >= 2 {
-                    ForEach(Array(model.chapters.enumerated()), id: \.element.id) { index, chapter in
-                        Button {
-                            model.toggleChapterEnabled(at: index)
-                        } label: {
-                            HStack {
-                                Text(chapter.title ?? "Chapter \(chapter.index + 1)")
-                                Spacer()
-                                Text(formatDuration(chapter.endSeconds - chapter.startSeconds))
-                                    .customFont(.caption)
+            VStack(spacing: 0) {
+                Picker("Tab", selection: $selectedTab) {
+                    Text(model.chapters.count >= 2 ? "Chapters" : "Tracks").tag(PlaylistTab.items)
+                    Text("Bookmarks").tag(PlaylistTab.bookmarks)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+
+                if selectedTab == .items {
+                    List {
+                        if model.chapters.count >= 2 {
+                            ForEach(Array(model.chapters.enumerated()), id: \.element.id) { index, chapter in
+                                chapterRow(index: index, chapter: chapter)
                             }
-                            .foregroundStyle(chapter.isEnabled ? .primary : .tertiary)
+                            .onMove { source, destination in
+                                model.moveChapters(from: source, to: destination)
+                            }
+                        } else {
+                            ForEach(Array(model.tracks.enumerated()), id: \.element.id) { index, track in
+                                trackRow(index: index, track: track)
+                            }
+                            .onMove { source, destination in
+                                model.moveTracks(from: source, to: destination)
+                            }
                         }
                     }
-                    .onMove { source, destination in
-                        model.moveChapters(from: source, to: destination)
-                    }
+                    .environment(\.editMode, .constant(.active))
                 } else {
-                    ForEach(Array(model.tracks.enumerated()), id: \.element.id) { index, track in
-                        Button {
-                            model.toggleTrackEnabled(at: index)
-                        } label: {
-                            HStack {
-                                Text(track.title)
+                    let sortedBookmarks: [Bookmark] = {
+                        let trackId = model.tracks.indices.contains(model.currentIndex) ? model.tracks[model.currentIndex].id : nil
+                        return model.bookmarks
+                            .filter { $0.trackId == nil || $0.trackId == trackId }
+                            .sorted { $0.timestamp < $1.timestamp }
+                    }()
+
+                    if sortedBookmarks.isEmpty {
+                        ContentUnavailableView(
+                            "No Bookmarks",
+                            systemImage: "bookmark",
+                            description: Text("Tap the bookmark button while playing to save a moment.")
+                        )
+                    } else {
+                        List {
+                            ForEach(sortedBookmarks, id: \.id) { bm in
+                                bookmarkRow(bm)
                             }
-                            .foregroundStyle(track.isEnabled ? .primary : .tertiary)
                         }
-                    }
-                    .onMove { source, destination in
-                        model.moveTracks(from: source, to: destination)
                     }
                 }
             }
-            .environment(\.editMode, $editMode)
             .navigationTitle("Playlist")
+
+
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Reset") {
@@ -2237,10 +2635,100 @@ struct PlaylistView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .sheet(item: Binding(
+                get: { editingBookmarkID.map { IdentifiableUUID(id: $0) } },
+                set: { editingBookmarkID = $0?.id }
+            )) { wrapper in
+                EditBookmarkView(model: model, bookmarkID: wrapper.id)
+            }
         }
         .environment(\.font, appFont == "Helvetica" ? .body : .custom(appFont, size: 17, relativeTo: .body))
     }
+
+    @ViewBuilder
+    private func chapterRow(index: Int, chapter: PlayerModel.Chapter) -> some View {
+        Button {
+            model.toggleChapterEnabled(at: index)
+        } label: {
+            HStack {
+                Image(systemName: "list.bullet")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22)
+                Text(chapter.title ?? "Chapter \(chapter.index + 1)")
+                Spacer()
+                Text(formatDuration(chapter.endSeconds - chapter.startSeconds))
+                    .customFont(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .foregroundStyle(chapter.isEnabled ? .primary : .tertiary)
+        }
+    }
+
+    @ViewBuilder
+    private func trackRow(index: Int, track: PlayerModel.Track) -> some View {
+        Button {
+            model.toggleTrackEnabled(at: index)
+        } label: {
+            HStack {
+                Image(systemName: "music.note")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22)
+                Text(track.title)
+            }
+            .foregroundStyle(track.isEnabled ? .primary : .tertiary)
+        }
+    }
+
+    @ViewBuilder
+    private func bookmarkRow(_ bm: Bookmark) -> some View {
+        // Tapping the row toggles the enabled state (matching chapters/tracks).
+        // A separate "jump" affordance is exposed via swipe actions.
+        Button {
+            model.toggleBookmarkEnabled(id: bm.id)
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: bm.voiceMemoFileName != nil ? "mic.fill" : "note.text")
+                    .foregroundStyle(bm.isEnabled ? (bm.voiceMemoFileName != nil ? Color.red : Color.accentColor) : Color.secondary)
+                    .frame(width: 22)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(bm.title.isEmpty ? "Bookmark" : bm.title)
+                        .lineLimit(1)
+                    Text(formatHMS(bm.timestamp))
+                        .customFont(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Spacer()
+                Image(systemName: "bookmark.fill")
+                    .foregroundStyle(.tint)
+            }
+            .foregroundStyle(bm.isEnabled ? .primary : .tertiary)
+        }
+        .listRowBackground(Color.accentColor.opacity(bm.isEnabled ? 0.06 : 0.02))
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                model.jumpToBookmark(bm)
+            } label: {
+                Label("Jump", systemImage: "play.fill")
+            }
+            .tint(.green)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                model.deleteBookmark(id: bm.id)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            Button {
+                editingBookmarkID = bm.id
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.blue)
+        }
+    }
 }
+
 
 // MARK: - Persistence helper
 
@@ -2328,6 +2816,24 @@ private struct Persistence {
         } catch {
             print("Bookmark save failed: \(error)")
         }
+    }
+
+    // MARK: - Bookmarks (per-book) persistence
+
+    private func bookmarksKey(for key: String) -> String { "bookmarks_\(key)" }
+
+    func saveBookmarks(_ bookmarks: [Bookmark], for key: String) {
+        do {
+            let data = try JSONEncoder().encode(bookmarks)
+            defaults.set(data, forKey: bookmarksKey(for: key))
+        } catch {
+            print("Bookmark encode failed: \(error)")
+        }
+    }
+
+    func loadBookmarks(for key: String) -> [Bookmark] {
+        guard let data = defaults.data(forKey: bookmarksKey(for: key)) else { return [] }
+        return (try? JSONDecoder().decode([Bookmark].self, from: data)) ?? []
     }
 
     func restoreBookmark() -> URL? {
