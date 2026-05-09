@@ -19,7 +19,7 @@
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CC00BC4C2FA6B66400323F38;
-			remoteInfo = "AuDioHD WidgetExtension";
+			remoteInfo = "Orbit Audiobooks WidgetExtension";
 		};
 		CC08EC672F9522F800206D2F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -40,21 +40,21 @@
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CCC48E9A2FA6AB330003458B;
-			remoteInfo = "AuDioHD Watch App";
+			remoteInfo = "Orbit Audiobooks Watch App";
 		};
 		CCC48EB22FA6AB340003458B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CCC48E9A2FA6AB330003458B;
-			remoteInfo = "AuDioHD Watch App";
+			remoteInfo = "Orbit Audiobooks Watch App";
 		};
 		CCC48EB92FA6AB350003458B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = CCC48E9A2FA6AB330003458B;
-			remoteInfo = "AuDioHD Watch App";
+			remoteInfo = "Orbit Audiobooks Watch App";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -92,7 +92,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		CC00BC662FA6B66500323F38 /* Exceptions for "AuDioHD Widget" folder in "Orbit Audiobooks WidgetExtension" target */ = {
+		CC00BC662FA6B66500323F38 /* Exceptions for "Orbit Audiobooks Widget" folder in "Orbit Audiobooks WidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -106,7 +106,7 @@
 			);
 			target = CC08EC582F9522F600206D2F /* Orbit Audiobooks */;
 		};
-		CCA11E012FA6C00100323F38 /* Exceptions for "AuDioHD Watch App" folder in "Orbit Audiobooks Watch App" target */ = {
+		CCA11E012FA6C00100323F38 /* Exceptions for "Orbit Audiobooks Watch App" folder in "Orbit Audiobooks Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -116,12 +116,12 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		CC00BC532FA6B66400323F38 /* AuDioHD Widget */ = {
+		CC00BC532FA6B66400323F38 /* Orbit Audiobooks Widget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CC00BC662FA6B66500323F38 /* Exceptions for "AuDioHD Widget" folder in "Orbit Audiobooks WidgetExtension" target */,
+				CC00BC662FA6B66500323F38 /* Exceptions for "Orbit Audiobooks Widget" folder in "Orbit Audiobooks WidgetExtension" target */,
 			);
-			path = "AuDioHD Widget";
+			path = "Orbit Audiobooks Widget";
 			sourceTree = "<group>";
 		};
 		CC08EC5B2F9522F600206D2F /* OrbitAudioBooks */ = {
@@ -132,32 +132,32 @@
 			path = OrbitAudioBooks;
 			sourceTree = "<group>";
 		};
-		CC08EC692F9522F800206D2F /* AuDioHDTests */ = {
+		CC08EC692F9522F800206D2F /* Orbit AudiobooksTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AuDioHDTests;
+			path = "Orbit AudiobooksTests";
 			sourceTree = "<group>";
 		};
-		CC08EC732F9522F800206D2F /* AuDioHDUITests */ = {
+		CC08EC732F9522F800206D2F /* Orbit AudiobooksUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AuDioHDUITests;
+			path = "Orbit AudiobooksUITests";
 			sourceTree = "<group>";
 		};
-		CCC48E9C2FA6AB330003458B /* AuDioHD Watch App */ = {
+		CCC48E9C2FA6AB330003458B /* Orbit Audiobooks Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CCA11E012FA6C00100323F38 /* Exceptions for "AuDioHD Watch App" folder in "Orbit Audiobooks Watch App" target */,
+				CCA11E012FA6C00100323F38 /* Exceptions for "Orbit Audiobooks Watch App" folder in "Orbit Audiobooks Watch App" target */,
 			);
-			path = "AuDioHD Watch App";
+			path = "Orbit Audiobooks Watch App";
 			sourceTree = "<group>";
 		};
-		CCC48EAA2FA6AB340003458B /* AuDioHD Watch AppTests */ = {
+		CCC48EAA2FA6AB340003458B /* Orbit Audiobooks Watch AppTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "AuDioHD Watch AppTests";
+			path = "Orbit Audiobooks Watch AppTests";
 			sourceTree = "<group>";
 		};
-		CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */ = {
+		CCC48EB42FA6AB340003458B /* Orbit Audiobooks Watch AppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "AuDioHD Watch AppUITests";
+			path = "Orbit Audiobooks Watch AppUITests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -216,12 +216,12 @@
 			isa = PBXGroup;
 			children = (
 				CC08EC5B2F9522F600206D2F /* OrbitAudioBooks */,
-				CC08EC692F9522F800206D2F /* AuDioHDTests */,
-				CC08EC732F9522F800206D2F /* AuDioHDUITests */,
-				CCC48E9C2FA6AB330003458B /* AuDioHD Watch App */,
-				CCC48EAA2FA6AB340003458B /* AuDioHD Watch AppTests */,
-				CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */,
-				CC00BC532FA6B66400323F38 /* AuDioHD Widget */,
+				CC08EC692F9522F800206D2F /* Orbit AudiobooksTests */,
+				CC08EC732F9522F800206D2F /* Orbit AudiobooksUITests */,
+				CCC48E9C2FA6AB330003458B /* Orbit Audiobooks Watch App */,
+				CCC48EAA2FA6AB340003458B /* Orbit Audiobooks Watch AppTests */,
+				CCC48EB42FA6AB340003458B /* Orbit Audiobooks Watch AppUITests */,
+				CC00BC532FA6B66400323F38 /* Orbit Audiobooks Widget */,
 				CC00BC4E2FA6B66400323F38 /* Frameworks */,
 				CC08EC5A2F9522F600206D2F /* Products */,
 			);
@@ -255,10 +255,10 @@
 			buildRules = (
 			);
 			fileSystemSynchronizedGroups = (
-				CC00BC532FA6B66400323F38 /* AuDioHD Widget */,
+				CC00BC532FA6B66400323F38 /* Orbit Audiobooks Widget */,
 			);
 			name = "Orbit Audiobooks WidgetExtension";
-			productName = "AuDioHD WidgetExtension";
+			productName = "Orbit Audiobooks WidgetExtension";
 			productReference = CC00BC4D2FA6B66400323F38 /* Orbit Audiobooks WidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
@@ -298,10 +298,10 @@
 				CC08EC682F9522F800206D2F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CC08EC692F9522F800206D2F /* AuDioHDTests */,
+				CC08EC692F9522F800206D2F /* Orbit AudiobooksTests */,
 			);
 			name = "Orbit AudiobooksTests";
-			productName = AuDioHDTests;
+			productName = "Orbit AudiobooksTests";
 			productReference = CC08EC662F9522F800206D2F /* Orbit AudiobooksTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -319,10 +319,10 @@
 				CC08EC722F9522F800206D2F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CC08EC732F9522F800206D2F /* AuDioHDUITests */,
+				CC08EC732F9522F800206D2F /* Orbit AudiobooksUITests */,
 			);
 			name = "Orbit AudiobooksUITests";
-			productName = AuDioHDUITests;
+			productName = "Orbit AudiobooksUITests";
 			productReference = CC08EC702F9522F800206D2F /* Orbit AudiobooksUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -341,10 +341,10 @@
 				CC00BC602FA6B66500323F38 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CCC48E9C2FA6AB330003458B /* AuDioHD Watch App */,
+				CCC48E9C2FA6AB330003458B /* Orbit Audiobooks Watch App */,
 			);
 			name = "Orbit Audiobooks Watch App";
-			productName = "AuDioHD Watch App";
+			productName = "Orbit Audiobooks Watch App";
 			productReference = CCC48E9B2FA6AB330003458B /* Orbit Audiobooks Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -362,10 +362,10 @@
 				CCC48EA92FA6AB340003458B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CCC48EAA2FA6AB340003458B /* AuDioHD Watch AppTests */,
+				CCC48EAA2FA6AB340003458B /* Orbit Audiobooks Watch AppTests */,
 			);
 			name = "Orbit Audiobooks Watch AppTests";
-			productName = "AuDioHD Watch AppTests";
+			productName = "Orbit Audiobooks Watch AppTests";
 			productReference = CCC48EA72FA6AB340003458B /* Orbit Audiobooks Watch AppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -383,10 +383,10 @@
 				CCC48EB32FA6AB340003458B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */,
+				CCC48EB42FA6AB340003458B /* Orbit Audiobooks Watch AppUITests */,
 			);
 			name = "Orbit Audiobooks Watch AppUITests";
-			productName = "AuDioHD Watch AppUITests";
+			productName = "Orbit Audiobooks Watch AppUITests";
 			productReference = CCC48EB12FA6AB340003458B /* Orbit Audiobooks Watch AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -567,13 +567,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Orbit Audiobooks.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AuDioHD Widget/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Widget";
+				INFOPLIST_FILE = "Orbit Audiobooks Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Orbit Audiobooks Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -602,13 +602,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Orbit Audiobooks.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AuDioHD Widget/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Widget";
+				INFOPLIST_FILE = "Orbit Audiobooks Widget/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Orbit Audiobooks Widget";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -860,7 +860,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 0.5;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudiobooksTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -887,7 +887,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 0.5;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudiobooksTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -913,7 +913,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 0.5;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudiobooksUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -939,7 +939,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				MACOSX_DEPLOYMENT_TARGET = 26.3;
 				MARKETING_VERSION = 0.5;
-				PRODUCT_BUNDLE_IDENTIFIER = Dan.AuDioHDUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudiobooksUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -960,13 +960,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Orbit Audiobooks.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Watch App";
+				INFOPLIST_KEY_CFBundleDisplayName = "Orbit Audiobooks Watch App";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to the microphone to record voice memos for bookmarks.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We need speech recognition to dictate text for bookmarks.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -997,13 +997,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AuDioHD.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Orbit Audiobooks.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "AuDioHD Watch App";
+				INFOPLIST_KEY_CFBundleDisplayName = "Orbit Audiobooks Watch App";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to the microphone to record voice memos for bookmarks.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We need speech recognition to dictate text for bookmarks.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -1096,7 +1096,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				TEST_TARGET_NAME = "AuDioHD Watch App";
+				TEST_TARGET_NAME = "Orbit Audiobooks Watch App";
 				VERSIONING_SYSTEM = "apple-generic";
 				WATCHOS_DEPLOYMENT_TARGET = 26.4;
 			};
@@ -1119,7 +1119,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				TEST_TARGET_NAME = "AuDioHD Watch App";
+				TEST_TARGET_NAME = "Orbit Audiobooks Watch App";
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				WATCHOS_DEPLOYMENT_TARGET = 26.4;
