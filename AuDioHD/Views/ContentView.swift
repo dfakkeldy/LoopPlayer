@@ -85,6 +85,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
     /// Boundary observer that fires when playback hits a bookmark with a memo.
     @ObservationIgnored private var bookmarkBoundaryObserver: Any?
+    /// Boundary observer for bookmark-loop endpoints (precise loop-back trigger).
+    @ObservationIgnored private var bookmarkLoopBoundaryObserver: Any?
     /// Track timestamps of recently triggered bookmarks to avoid retrigger loops.
     @ObservationIgnored private var lastTriggeredBookmarkID: UUID?
     @ObservationIgnored private var lastTriggeredAtPlayerSecond: Double = -1
@@ -972,6 +974,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         if let key = folderURL?.absoluteString {
             persistence.saveLoopMode(for: key, loopMode: mode.rawValue)
         }
+        installBookmarkLoopBoundaryObserver()
         syncToWatch()
     }
 
@@ -998,6 +1001,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         if let endObserver { NotificationCenter.default.removeObserver(endObserver); self.endObserver = nil }
         if let timeObserver, let player { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
         removeChapterBoundaryObserver()
+        removeBookmarkLoopBoundaryObserver()
         player = nil
 
         stopCurrentFileSecurityScopeIfNeeded()
@@ -1041,6 +1045,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         if let endObserver { NotificationCenter.default.removeObserver(endObserver); self.endObserver = nil }
         if let timeObserver, let player { player.removeTimeObserver(timeObserver); self.timeObserver = nil }
         removeChapterBoundaryObserver()
+        removeBookmarkLoopBoundaryObserver()
 
         // For Files/iCloud-provider URLs:
         // - keep the security scope open BEFORE touching the file (creating items, loading duration, etc.)
@@ -1816,15 +1821,57 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         let sorted = currentTrackBookmarks.filter { $0.isEnabled }
         guard sorted.count >= 2 else { return }
 
-        guard let startIdx = sorted.lastIndex(where: { $0.timestamp <= t }) else { return }
+        // Strict `<` keeps the end-boundary in the approaching segment so the
+        // loop-back fires *before* the segment shifts forward.
+        guard let startIdx = sorted.lastIndex(where: { $0.timestamp < t }) else { return }
         let endIdx = startIdx + 1
-        guard endIdx < sorted.count else { return }
+        guard endIdx < sorted.count else {
+            // Playhead overshot the last boundary — loop to the last segment start.
+            if sorted.count >= 2, t - sorted[sorted.count - 1].timestamp < 1.0 {
+                let lastSegmentStart = sorted.count - 2
+                isSeekingForChapterBoundary = true
+                player.seek(to: CMTime(seconds: sorted[lastSegmentStart].timestamp + 0.05, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                    self?.resumeAfterSeek()
+                }
+            }
+            return
+        }
 
-        if t >= sorted[endIdx].timestamp - 0.5 {
+        // Look-ahead covers one polling interval (0.25 s) scaled by playback speed.
+        let lookAhead = max(0.5, 0.3 * Double(speed))
+        if t >= sorted[endIdx].timestamp - lookAhead {
             isSeekingForChapterBoundary = true
             player.seek(to: CMTime(seconds: sorted[startIdx].timestamp + 0.05, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                 self?.resumeAfterSeek()
             }
+        }
+    }
+
+    private func removeBookmarkLoopBoundaryObserver() {
+        if let bookmarkLoopBoundaryObserver, let player {
+            player.removeTimeObserver(bookmarkLoopBoundaryObserver)
+        }
+        bookmarkLoopBoundaryObserver = nil
+    }
+
+    private func installBookmarkLoopBoundaryObserver() {
+        removeBookmarkLoopBoundaryObserver()
+        guard let player, loopMode == .bookmark else { return }
+        let sorted = currentTrackBookmarks.filter { $0.isEnabled }
+        guard sorted.count >= 2 else { return }
+
+        let times: [NSValue] = sorted.dropFirst().compactMap { bm in
+            let boundary = bm.timestamp - 0.05
+            guard boundary > 0, boundary.isFinite else { return nil }
+            return NSValue(time: CMTime(seconds: boundary, preferredTimescale: 600))
+        }
+        guard !times.isEmpty else { return }
+
+        bookmarkLoopBoundaryObserver = player.addBoundaryTimeObserver(
+            forTimes: times,
+            queue: .main
+        ) { [weak self] in
+            self?.applyBookmarkLoopIfNeeded()
         }
     }
 
@@ -2080,7 +2127,10 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             guard bm.timestamp.isFinite, bm.timestamp > 0 else { return nil }
             return NSValue(time: CMTime(seconds: bm.timestamp, preferredTimescale: 600))
         }
-        guard !times.isEmpty else { return }
+        guard !times.isEmpty else {
+            installBookmarkLoopBoundaryObserver()
+            return
+        }
         bookmarkBoundaryObserver = player.addBoundaryTimeObserver(
             forTimes: times,
             queue: .main
@@ -2089,6 +2139,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             self.checkBookmarkVoiceMemoTrigger(at: t, previousSeconds: self.lastBookmarkCheckSecond)
             self.lastBookmarkCheckSecond = t
         }
+        installBookmarkLoopBoundaryObserver()
     }
 
     /// Jump playback to a bookmark's timestamp (without firing the voice memo overlay).
@@ -2097,6 +2148,37 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         lastTriggeredBookmarkID = bm.id
         lastTriggeredAtPlayerSecond = bm.timestamp
         seek(toSeconds: bm.timestamp)
+    }
+
+    // MARK: Audio Source Switching
+
+    private enum AudioSource { case mainPlayer, voiceMemo }
+
+    /// Explicitly transitions audio between the main AVPlayer and voice memo
+    /// engine.  Pausing the primary player first prevents overlapping streams;
+    /// reconfiguring the AVAudioSession on each transition ensures routing and
+    /// ducking are correct.
+    private func switchAudioSource(to source: AudioSource) {
+        let session = AVAudioSession.sharedInstance()
+        switch source {
+        case .voiceMemo:
+            player?.pause()
+            try? session.setCategory(.playback, mode: .spokenAudio,
+                                     options: [.interruptSpokenAudioAndMixWithOthers, .duckOthers])
+            try? session.setActive(true)
+        case .mainPlayer:
+            voiceMemoPlayerNode?.stop()
+            voiceMemoEngine?.stop()
+            voiceMemoEngine?.reset()
+            voiceMemoProgressTimer?.invalidate()
+            voiceMemoProgressTimer = nil
+            voiceMemoProgress = 0.0
+            voiceMemoPlayerNode = nil
+            voiceMemoEngine = nil
+            isPlayingVoiceMemo = false
+            try? session.setCategory(.playback, mode: .spokenAudio, options: [])
+            try? session.setActive(true)
+        }
     }
 
     // MARK: Voice Memo Interception
@@ -2147,12 +2229,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     }
 
     private func startVoiceMemoPlayback(url: URL) {
-        player?.pause()
+        switchAudioSource(to: .voiceMemo)
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [])
-            try session.setActive(true)
-
             let audioFile = try AVAudioFile(forReading: url)
             let engine = AVAudioEngine()
             let playerNode = AVAudioPlayerNode()
@@ -2190,9 +2268,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             updateNowPlayingInfo(isPaused: true)
         } catch {
             print("Voice memo playback error: \(error)")
-            isPlayingVoiceMemo = false
-            voiceMemoEngine = nil
-            voiceMemoPlayerNode = nil
+            switchAudioSource(to: .mainPlayer)
             if isPlaying {
                 player?.playImmediately(atRate: speed)
             }
@@ -2200,14 +2276,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     }
 
     func stopVoiceMemo() {
-        voiceMemoPlayerNode?.stop()
-        voiceMemoEngine?.stop()
-        voiceMemoProgressTimer?.invalidate()
-        voiceMemoProgressTimer = nil
-        voiceMemoProgress = 0.0
-        voiceMemoPlayerNode = nil
-        voiceMemoEngine = nil
-        isPlayingVoiceMemo = false
+        switchAudioSource(to: .mainPlayer)
 
         player?.play()
         applySpeedToCurrentItem()
@@ -2215,14 +2284,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     }
 
     private func voiceMemoDidFinish() {
-        voiceMemoPlayerNode?.stop()
-        voiceMemoEngine?.stop()
-        voiceMemoProgressTimer?.invalidate()
-        voiceMemoProgressTimer = nil
-        voiceMemoProgress = 0.0
-        voiceMemoPlayerNode = nil
-        voiceMemoEngine = nil
-        isPlayingVoiceMemo = false
+        switchAudioSource(to: .mainPlayer)
 
         if isPlaying {
             player?.playImmediately(atRate: speed)
@@ -2892,7 +2954,13 @@ struct PlaylistView: View {
     @State private var editingBookmarkID: UUID? = nil
 
     private enum PlaylistTab: Hashable { case items, bookmarks }
-    @State private var selectedTab: PlaylistTab = .items
+    @State private var selectedTab: PlaylistTab
+    @State private var showChapters: Bool = false
+
+    init(model: PlayerModel) {
+        self.model = model
+        _selectedTab = State(initialValue: model.loopMode == .bookmark ? .bookmarks : .items)
+    }
 
     private func formatDuration(_ seconds: Double) -> String {
         let h = Int(seconds) / 3600
@@ -2961,7 +3029,7 @@ struct PlaylistView: View {
                             .sorted { $0.timestamp < $1.timestamp }
                     }()
 
-                    if sortedBookmarks.isEmpty {
+                    if sortedBookmarks.isEmpty && !showChapters {
                         ContentUnavailableView(
                             "No Bookmarks",
                             systemImage: "bookmark",
@@ -2969,8 +3037,38 @@ struct PlaylistView: View {
                         )
                     } else {
                         List {
-                            ForEach(sortedBookmarks, id: \.id) { bm in
-                                bookmarkRow(bm)
+                            if model.chapters.count >= 2 {
+                                Toggle("Show Chapters", isOn: $showChapters)
+                            }
+
+                            if showChapters {
+                                Section("Chapters") {
+                                    ForEach(model.chapters) { chapter in
+                                        Button {
+                                            model.seek(toSeconds: chapter.startSeconds + 0.05)
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "list.bullet")
+                                                    .foregroundStyle(.secondary)
+                                                    .frame(width: 22)
+                                                Text(chapter.title ?? "Chapter \(chapter.index + 1)")
+                                                Spacer()
+                                                Text(formatHMS(chapter.startSeconds))
+                                                    .customFont(.caption)
+                                                    .foregroundStyle(.secondary)
+                                                    .monospacedDigit()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if !sortedBookmarks.isEmpty {
+                                Section(showChapters ? "Bookmarks" : "") {
+                                    ForEach(sortedBookmarks, id: \.id) { bm in
+                                        bookmarkRow(bm)
+                                    }
+                                }
                             }
                         }
                     }
