@@ -43,7 +43,7 @@ enum WatchAction: String, Codable, CaseIterable, Identifiable {
         case .skipBackward:  return "skipBackward"
         case .nextTrack:     return "next"
         case .previousTrack: return "previous"
-        case .loopMode:      return "toggleLoopMode"
+        case .loopMode:      return "cycleLoopMode"
         case .speed:         return "cycleSpeed"
         case .sleepTimer:    return "toggleSleepTimer"
         case .bookmark:      return "addBookmark"
@@ -60,7 +60,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var title: String = "No track selected"
     var thumbnailImage: UIImage? = nil
     var progressFraction: Double = 0.0
-    var loopModeOn: Bool = false
+    var loopMode: String = "off"
     var bookmarkStorageKey: String? = nil
     var folderKey: String? = nil
     var trackId: String? = nil
@@ -85,7 +85,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
         isPlaying = defaults?.bool(forKey: "isPlaying") ?? false
         title = defaults?.string(forKey: "title") ?? "No track selected"
         progressFraction = defaults?.double(forKey: "progressFraction") ?? 0.0
-        loopModeOn = defaults?.bool(forKey: "loopModeOn") ?? false
+        loopMode = defaults?.string(forKey: "loopMode") ?? "off"
         currentTime = defaults?.double(forKey: "currentTime") ?? 0
         bookmarkStorageKey = defaults?.string(forKey: "bookmarkStorageKey")
         folderKey = defaults?.string(forKey: "folderKey")
@@ -163,9 +163,9 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 self.trackId = trackId
                 self.defaults?.set(trackId, forKey: "trackId")
             }
-            if let loopModeOn = state["loopModeOn"] as? Bool {
-                self.loopModeOn = loopModeOn
-                self.defaults?.set(loopModeOn, forKey: "loopModeOn")
+            if let loopMode = state["loopMode"] as? String {
+                self.loopMode = loopMode
+                self.defaults?.set(loopMode, forKey: "loopMode")
             }
             if let watchPage1 = state["watchPage1"] as? String {
                 self.page1Slots = self.padded(self.parseSlots(watchPage1))
@@ -259,9 +259,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 isPlaying.toggle()
             }
         case .loopMode:
-            if sendCommand("toggleLoopMode") {
-                loopModeOn.toggle()
-            }
+            sendCommand("cycleLoopMode")
         default:
             sendCommand(action.command)
         }
@@ -611,19 +609,41 @@ private struct TopSlotButton: View {
                     viewModel.handle(action)
                 }
             } label: {
-                Image(systemName: iconName)
-                    .font(.system(size: 24))
+                if action == .loopMode && viewModel.loopMode == "bookmark" {
+                    ZStack {
+                        Image(systemName: "arrow.trianglehead.clockwise")
+                            .font(.system(size: 24))
+                        Image(systemName: "bookmark.fill")
+                            .font(.system(size: 8, weight: .bold))
+                    }
                     .foregroundStyle(.white)
+                } else {
+                    Image(systemName: iconName)
+                        .font(.system(size: 24))
+                        .foregroundStyle(.white)
+                }
             }
             .buttonStyle(.plain)
             .accessibilityLabel(accessibilityLabelText)
-            .modifier(ToggleTraitModifier(isToggle: action == .loopMode, value: action == .loopMode ? (viewModel.loopModeOn ? "On" : "Off") : nil))
+            .modifier(ToggleTraitModifier(isToggle: action == .loopMode, value: action == .loopMode ? loopModeAccessibilityValue : nil))
+        }
+    }
+
+    private var loopModeAccessibilityValue: String {
+        switch viewModel.loopMode {
+        case "chapter": return "Chapter"
+        case "bookmark": return "Bookmark"
+        default: return "Off"
         }
     }
 
     private var iconName: String {
         if action == .loopMode {
-            return viewModel.loopModeOn ? "infinity.circle.fill" : "infinity.circle"
+            switch viewModel.loopMode {
+            case "chapter": return "infinity.circle.fill"
+            case "bookmark": return "arrow.trianglehead.clockwise"
+            default: return "infinity.circle"
+            }
         }
         return action.iconName
     }
@@ -677,17 +697,47 @@ private struct SideTransportButton: View {
                 viewModel.handle(action)
             }
         } label: {
-            Image(systemName: action == .empty ? "plus" : action.iconName)
-                .font(.system(size: 20))
-                .frame(width: 38, height: 38)
-                .padding(15)
-                .contentShape(Rectangle())
-                .opacity(action == .empty ? 0.35 : 1.0)
+            Group {
+                if action == .loopMode && viewModel.loopMode == "bookmark" {
+                    ZStack {
+                        Image(systemName: "arrow.trianglehead.clockwise")
+                            .font(.system(size: 20))
+                        Image(systemName: "bookmark.fill")
+                            .font(.system(size: 7, weight: .bold))
+                    }
+                } else {
+                    Image(systemName: sideIconName)
+                        .font(.system(size: 20))
+                }
+            }
+            .frame(width: 38, height: 38)
+            .padding(15)
+            .contentShape(Rectangle())
+            .opacity(action == .empty ? 0.35 : 1.0)
         }
         .buttonStyle(.borderedProminent)
         .disabled(action == .empty)
         .accessibilityLabel(accessibilityLabelText)
-        .modifier(ToggleTraitModifier(isToggle: action == .loopMode, value: action == .loopMode ? (viewModel.loopModeOn ? "On" : "Off") : nil))
+        .modifier(ToggleTraitModifier(isToggle: action == .loopMode, value: action == .loopMode ? loopModeAccessibilityValue : nil))
+    }
+
+    private var sideIconName: String {
+        if action == .loopMode {
+            switch viewModel.loopMode {
+            case "chapter": return "infinity.circle.fill"
+            case "bookmark": return "arrow.trianglehead.clockwise"
+            default: return "infinity.circle"
+            }
+        }
+        return action == .empty ? "plus" : action.iconName
+    }
+
+    private var loopModeAccessibilityValue: String {
+        switch viewModel.loopMode {
+        case "chapter": return "Chapter"
+        case "bookmark": return "Bookmark"
+        default: return "Off"
+        }
     }
 
     private var accessibilityLabelText: String {

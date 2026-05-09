@@ -17,6 +17,14 @@ import WatchConnectivity
 //
 // Also ensure you have a valid entitlement to play audio in background (Background Modes capability).
 
+// MARK: - Loop Mode
+
+enum LoopMode: String, Codable {
+    case off
+    case chapter
+    case bookmark
+}
+
 // MARK: - Model
 
 @Observable
@@ -38,7 +46,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     }
 
     // UI state
-    var loopModeOn: Bool = true
+    var loopMode: LoopMode = .off
     var speed: Float
 
     private(set) var folderURL: URL?
@@ -206,9 +214,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                         self.setSystemVolume(newVol)
                     }
                 case "toggle": self.togglePlayPause()
-                case "toggleLoopMode":
-                    self.setLoopMode(!self.loopModeOn)
-                    self.syncToWatch()
+                case "toggleLoopMode", "cycleLoopMode":
+                    self.cycleLoopMode()
                 case "addBookmark":
                     _ = self.addBookmarkAtCurrentTime()
                 case "addWatchTextBookmark":
@@ -262,7 +269,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         
         let crownAction = UserDefaults.standard.string(forKey: "crownAction") ?? "volume"
         context["crownAction"] = crownAction
-        context["loopModeOn"] = loopModeOn
+        context["loopMode"] = loopMode.rawValue
         
         context["watchPage1"] = UserDefaults.standard.string(forKey: "watchPage1") ?? "empty,empty,skipBackward,playPause,skipForward"
         context["watchPage2"] = UserDefaults.standard.string(forKey: "watchPage2") ?? "loopMode,empty,speed,sleepTimer,bookmark"
@@ -863,12 +870,24 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         updateProgressFromPlayer()
     }
 
-    func setLoopMode(_ mode: Bool) {
-        loopModeOn = mode
+    func setLoopMode(_ mode: LoopMode) {
+        loopMode = mode
         if let key = folderURL?.absoluteString {
-            persistence.saveLoopMode(for: key, loopMode: mode)
+            persistence.saveLoopMode(for: key, loopMode: mode.rawValue)
         }
         syncToWatch()
+    }
+
+    func cycleLoopMode() {
+        let hasBookmarks = !bookmarks.isEmpty
+        switch loopMode {
+        case .off:
+            setLoopMode(.chapter)
+        case .chapter:
+            setLoopMode(hasBookmarks ? .bookmark : .off)
+        case .bookmark:
+            setLoopMode(.off)
+        }
     }
 
     private func stop() {
@@ -906,10 +925,14 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         // Load the specific speed for this book
         if let key = folderURL?.absoluteString {
             speed = persistence.getSpeed(for: key) ?? 1.25
-            loopModeOn = persistence.getLoopMode(for: key) ?? false
+            if let raw = persistence.getLoopMode(for: key), let mode = LoopMode(rawValue: raw) {
+                loopMode = mode
+            } else {
+                loopMode = .off
+            }
         } else {
             speed = 1.25
-            loopModeOn = true
+            loopMode = .off
         }
         chapters = []
         currentChapterIndex = nil
@@ -996,6 +1019,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                 self?.updateProgressFromPlayer()
                 self?.enforceEnabledState()
                 self?.applyChapterLoopIfNeeded()
+                self?.applyBookmarkLoopIfNeeded()
                 if UserDefaults.standard.bool(forKey: "playBookmarksInline"),
                    let self,
                    let t = self.player?.currentTime().seconds,
@@ -1013,7 +1037,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             if let idx = currentChapterIndex, !chapters[idx].isEnabled {
                 if let nextIdx = findNextEnabledChapterIndex(after: idx) {
                     seekToChapter(at: nextIdx)
-                } else if loopModeOn, let firstIdx = findNextEnabledChapterIndex(after: -1) {
+                } else if loopMode == .chapter, let firstIdx = findNextEnabledChapterIndex(after: -1) {
                     seekToChapter(at: firstIdx)
                 } else {
                     nextTrack()
@@ -1028,9 +1052,9 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
     private func handleTrackEnded() {
         guard let player else { return }
-        
+
         if chapters.count >= 2 {
-            if loopModeOn {
+            if loopMode == .chapter {
                 // If it hits the absolute end of the file, just loop the current (last) chapter.
                 if let idx = currentChapterIndex {
                     let c = chapters[idx]
@@ -1056,7 +1080,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             return
         }
 
-        if loopModeOn {
+        if loopMode == .chapter {
             progressFraction = 0
             player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                 DispatchQueue.main.async {
@@ -1654,7 +1678,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
 
         let c = chapters[idx]
         if t >= (c.endSeconds - 0.5) {
-            if loopModeOn {
+            if loopMode == .chapter {
                 // Loop the CURRENT chapter.
                 isSeekingForChapterBoundary = true
                 progressFraction = 0
@@ -1682,6 +1706,27 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                         self?.nextTrack()
                     }
                 }
+            }
+        }
+    }
+
+    private func applyBookmarkLoopIfNeeded() {
+        guard loopMode == .bookmark, !isManualSeeking, !isSeekingForChapterBoundary else { return }
+        guard let player else { return }
+        let t = player.currentTime().seconds
+        guard t.isFinite else { return }
+
+        let sorted = currentTrackBookmarks.filter { $0.isEnabled }
+        guard sorted.count >= 2 else { return }
+
+        guard let startIdx = sorted.lastIndex(where: { $0.timestamp <= t }) else { return }
+        let endIdx = startIdx + 1
+        guard endIdx < sorted.count else { return }
+
+        if t >= sorted[endIdx].timestamp - 0.5 {
+            isSeekingForChapterBoundary = true
+            player.seek(to: CMTime(seconds: sorted[startIdx].timestamp + 0.05, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                self?.resumeAfterSeek()
             }
         }
     }
@@ -1914,6 +1959,10 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             bookmarks.remove(at: idx)
             persistBookmarks()
             installBookmarkBoundaryObserver()
+
+            if loopMode == .bookmark && bookmarks.isEmpty {
+                setLoopMode(.off)
+            }
         }
     }
 
@@ -2406,17 +2455,37 @@ struct ContentView: View {
                 Divider()
                 HStack {
                     Button {
-                        model.setLoopMode(!model.loopModeOn)
+                        model.cycleLoopMode()
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     } label: {
-                        Image(systemName: model.loopModeOn ? "infinity.circle.fill" : "infinity.circle")
-                            .font(.title2)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
+                        ZStack {
+                            switch model.loopMode {
+                            case .off:
+                                Image(systemName: "infinity.circle")
+                                    .font(.title2)
+                            case .chapter:
+                                Image(systemName: "infinity.circle.fill")
+                                    .font(.title2)
+                            case .bookmark:
+                                Image(systemName: "arrow.trianglehead.clockwise")
+                                    .font(.title2)
+                                    .overlay(
+                                        Image(systemName: "bookmark.fill")
+                                            .font(.system(size: 9, weight: .bold))
+                                    )
+                            }
+                        }
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Loop mode")
-                    .accessibilityValue(model.loopModeOn ? "On" : "Off")
-                    .accessibilityAddTraits(.isToggle)
+                    .accessibilityValue({
+                        switch model.loopMode {
+                        case .off: return "Off"
+                        case .chapter: return "Chapter"
+                        case .bookmark: return "Bookmark"
+                        }
+                    }())
 
                     Spacer()
 
@@ -2956,14 +3025,14 @@ private struct Persistence {
         return dict[title]
     }
     
-    func saveLoopMode(for key: String, loopMode: Bool) {
-        var dict = defaults.dictionary(forKey: loopModeKey) as? [String: Bool] ?? [:]
+    func saveLoopMode(for key: String, loopMode: String) {
+        var dict = defaults.dictionary(forKey: loopModeKey) as? [String: String] ?? [:]
         dict[key] = loopMode
         defaults.set(dict, forKey: loopModeKey)
     }
-    
-    func getLoopMode(for key: String) -> Bool? {
-        let dict = defaults.dictionary(forKey: loopModeKey) as? [String: Bool] ?? [:]
+
+    func getLoopMode(for key: String) -> String? {
+        let dict = defaults.dictionary(forKey: loopModeKey) as? [String: String] ?? [:]
         return dict[key]
     }
 
