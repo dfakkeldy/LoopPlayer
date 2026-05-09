@@ -56,20 +56,6 @@
 			remoteGlobalIDString = CCC48E9A2FA6AB330003458B;
 			remoteInfo = "AuDioHD Watch App";
 		};
-		CCCF73182FAFAC16006FB746 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CCCF730A2FAFAC14006FB746;
-			remoteInfo = "Orbit AudioBooks";
-		};
-		CCCF73222FAFAC16006FB746 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CC08EC512F9522F600206D2F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = CCCF730A2FAFAC14006FB746;
-			remoteInfo = "Orbit AudioBooks";
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -103,9 +89,6 @@
 		CCC48E9B2FA6AB330003458B /* Orbit Audiobooks Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Orbit Audiobooks Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCC48EA72FA6AB340003458B /* Orbit Audiobooks Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Orbit Audiobooks Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCC48EB12FA6AB340003458B /* Orbit Audiobooks Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Orbit Audiobooks Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCCF730B2FAFAC14006FB746 /* Orbit AudioBooks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Orbit AudioBooks.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCCF73172FAFAC16006FB746 /* Orbit AudioBooksTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Orbit AudioBooksTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCCF73212FAFAC16006FB746 /* Orbit AudioBooksUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Orbit AudioBooksUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -116,7 +99,7 @@
 			);
 			target = CC00BC4C2FA6B66400323F38 /* Orbit Audiobooks WidgetExtension */;
 		};
-		CC08EC842F95256B00206D2F /* Exceptions for "Orbit_AudioBooks" folder in "Orbit Audiobooks" target */ = {
+		CC08EC842F95256B00206D2F /* Exceptions for "OrbitAudioBooks" folder in "Orbit Audiobooks" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -141,12 +124,12 @@
 			path = "AuDioHD Widget";
 			sourceTree = "<group>";
 		};
-		CC08EC5B2F9522F600206D2F /* Orbit_AudioBooks */ = {
+		CC08EC5B2F9522F600206D2F /* OrbitAudioBooks */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CC08EC842F95256B00206D2F /* Exceptions for "Orbit_AudioBooks" folder in "Orbit Audiobooks" target */,
+				CC08EC842F95256B00206D2F /* Exceptions for "OrbitAudioBooks" folder in "Orbit Audiobooks" target */,
 			);
-			path = Orbit_AudioBooks;
+			path = OrbitAudioBooks;
 			sourceTree = "<group>";
 		};
 		CC08EC692F9522F800206D2F /* AuDioHDTests */ = {
@@ -175,21 +158,6 @@
 		CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "AuDioHD Watch AppUITests";
-			sourceTree = "<group>";
-		};
-		CCCF730C2FAFAC14006FB746 /* Orbit AudioBooks */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Orbit AudioBooks";
-			sourceTree = "<group>";
-		};
-		CCCF731A2FAFAC16006FB746 /* Orbit AudioBooksTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Orbit AudioBooksTests";
-			sourceTree = "<group>";
-		};
-		CCCF73242FAFAC16006FB746 /* Orbit AudioBooksUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Orbit AudioBooksUITests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -232,21 +200,6 @@
 			files = (
 			);
 		};
-		CCCF73082FAFAC14006FB746 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-			);
-		};
-		CCCF73142FAFAC16006FB746 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-			);
-		};
-		CCCF731E2FAFAC16006FB746 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-			);
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -262,16 +215,13 @@
 		CC08EC502F9522F600206D2F = {
 			isa = PBXGroup;
 			children = (
-				CC08EC5B2F9522F600206D2F /* Orbit_AudioBooks */,
+				CC08EC5B2F9522F600206D2F /* OrbitAudioBooks */,
 				CC08EC692F9522F800206D2F /* AuDioHDTests */,
 				CC08EC732F9522F800206D2F /* AuDioHDUITests */,
 				CCC48E9C2FA6AB330003458B /* AuDioHD Watch App */,
 				CCC48EAA2FA6AB340003458B /* AuDioHD Watch AppTests */,
 				CCC48EB42FA6AB340003458B /* AuDioHD Watch AppUITests */,
 				CC00BC532FA6B66400323F38 /* AuDioHD Widget */,
-				CCCF730C2FAFAC14006FB746 /* Orbit AudioBooks */,
-				CCCF731A2FAFAC16006FB746 /* Orbit AudioBooksTests */,
-				CCCF73242FAFAC16006FB746 /* Orbit AudioBooksUITests */,
 				CC00BC4E2FA6B66400323F38 /* Frameworks */,
 				CC08EC5A2F9522F600206D2F /* Products */,
 			);
@@ -287,9 +237,6 @@
 				CCC48EA72FA6AB340003458B /* Orbit Audiobooks Watch AppTests.xctest */,
 				CCC48EB12FA6AB340003458B /* Orbit Audiobooks Watch AppUITests.xctest */,
 				CC00BC4D2FA6B66400323F38 /* Orbit Audiobooks WidgetExtension.appex */,
-				CCCF730B2FAFAC14006FB746 /* Orbit AudioBooks.app */,
-				CCCF73172FAFAC16006FB746 /* Orbit AudioBooksTests.xctest */,
-				CCCF73212FAFAC16006FB746 /* Orbit AudioBooksUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -330,7 +277,7 @@
 				CCC48EBA2FA6AB350003458B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				CC08EC5B2F9522F600206D2F /* Orbit_AudioBooks */,
+				CC08EC5B2F9522F600206D2F /* OrbitAudioBooks */,
 			);
 			name = "Orbit Audiobooks";
 			productName = AuDioHD;
@@ -443,66 +390,6 @@
 			productReference = CCC48EB12FA6AB340003458B /* Orbit Audiobooks Watch AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		CCCF730A2FAFAC14006FB746 /* Orbit AudioBooks */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = CCCF732F2FAFAC16006FB746 /* Build configuration list for PBXNativeTarget "Orbit AudioBooks" */;
-			buildPhases = (
-				CCCF73072FAFAC14006FB746 /* Sources */,
-				CCCF73082FAFAC14006FB746 /* Frameworks */,
-				CCCF73092FAFAC14006FB746 /* Resources */,
-			);
-			buildRules = (
-			);
-			fileSystemSynchronizedGroups = (
-				CCCF730C2FAFAC14006FB746 /* Orbit AudioBooks */,
-			);
-			name = "Orbit AudioBooks";
-			productName = "Orbit AudioBooks";
-			productReference = CCCF730B2FAFAC14006FB746 /* Orbit AudioBooks.app */;
-			productType = "com.apple.product-type.application";
-		};
-		CCCF73162FAFAC16006FB746 /* Orbit AudioBooksTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = CCCF73302FAFAC16006FB746 /* Build configuration list for PBXNativeTarget "Orbit AudioBooksTests" */;
-			buildPhases = (
-				CCCF73132FAFAC16006FB746 /* Sources */,
-				CCCF73142FAFAC16006FB746 /* Frameworks */,
-				CCCF73152FAFAC16006FB746 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				CCCF73192FAFAC16006FB746 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				CCCF731A2FAFAC16006FB746 /* Orbit AudioBooksTests */,
-			);
-			name = "Orbit AudioBooksTests";
-			productName = "Orbit AudioBooksTests";
-			productReference = CCCF73172FAFAC16006FB746 /* Orbit AudioBooksTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		CCCF73202FAFAC16006FB746 /* Orbit AudioBooksUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = CCCF73312FAFAC16006FB746 /* Build configuration list for PBXNativeTarget "Orbit AudioBooksUITests" */;
-			buildPhases = (
-				CCCF731D2FAFAC16006FB746 /* Sources */,
-				CCCF731E2FAFAC16006FB746 /* Frameworks */,
-				CCCF731F2FAFAC16006FB746 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				CCCF73232FAFAC16006FB746 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				CCCF73242FAFAC16006FB746 /* Orbit AudioBooksUITests */,
-			);
-			name = "Orbit AudioBooksUITests";
-			productName = "Orbit AudioBooksUITests";
-			productReference = CCCF73212FAFAC16006FB746 /* Orbit AudioBooksUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -538,17 +425,6 @@
 						CreatedOnToolsVersion = 26.4.1;
 						TestTargetID = CCC48E9A2FA6AB330003458B;
 					};
-					CCCF730A2FAFAC14006FB746 = {
-						CreatedOnToolsVersion = 26.4.1;
-					};
-					CCCF73162FAFAC16006FB746 = {
-						CreatedOnToolsVersion = 26.4.1;
-						TestTargetID = CCCF730A2FAFAC14006FB746;
-					};
-					CCCF73202FAFAC16006FB746 = {
-						CreatedOnToolsVersion = 26.4.1;
-						TestTargetID = CCCF730A2FAFAC14006FB746;
-					};
 				};
 			};
 			buildConfigurationList = CC08EC542F9522F600206D2F /* Build configuration list for PBXProject "Orbit Audiobooks" */;
@@ -572,9 +448,6 @@
 				CCC48EA62FA6AB340003458B /* Orbit Audiobooks Watch AppTests */,
 				CCC48EB02FA6AB340003458B /* Orbit Audiobooks Watch AppUITests */,
 				CC00BC4C2FA6B66400323F38 /* Orbit Audiobooks WidgetExtension */,
-				CCCF730A2FAFAC14006FB746 /* Orbit AudioBooks */,
-				CCCF73162FAFAC16006FB746 /* Orbit AudioBooksTests */,
-				CCCF73202FAFAC16006FB746 /* Orbit AudioBooksUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -611,21 +484,6 @@
 			);
 		};
 		CCC48EAF2FA6AB340003458B /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
-		CCCF73092FAFAC14006FB746 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
-		CCCF73152FAFAC16006FB746 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
-		CCCF731F2FAFAC16006FB746 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -668,21 +526,6 @@
 			files = (
 			);
 		};
-		CCCF73072FAFAC14006FB746 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
-		CCCF73132FAFAC16006FB746 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
-		CCCF731D2FAFAC16006FB746 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -715,16 +558,6 @@
 			isa = PBXTargetDependency;
 			target = CCC48E9A2FA6AB330003458B /* Orbit Audiobooks Watch App */;
 			targetProxy = CCC48EB92FA6AB350003458B /* PBXContainerItemProxy */;
-		};
-		CCCF73192FAFAC16006FB746 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CCCF730A2FAFAC14006FB746 /* Orbit AudioBooks */;
-			targetProxy = CCCF73182FAFAC16006FB746 /* PBXContainerItemProxy */;
-		};
-		CCCF73232FAFAC16006FB746 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = CCCF730A2FAFAC14006FB746 /* Orbit AudioBooks */;
-			targetProxy = CCCF73222FAFAC16006FB746 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -923,14 +756,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_ASSET_PATHS = "Orbit_AudioBooks/Development\\ Assets";
+				DEVELOPMENT_ASSET_PATHS = "OrbitAudioBooks/Development\\ Assets";
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Orbit_AudioBooks/Info.plist;
+				INFOPLIST_FILE = OrbitAudioBooks/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Orbit Audiobooks";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -973,14 +806,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 7;
-				DEVELOPMENT_ASSET_PATHS = "Orbit_AudioBooks/Development\\ Assets";
+				DEVELOPMENT_ASSET_PATHS = "OrbitAudioBooks/Development\\ Assets";
 				DEVELOPMENT_TEAM = 8AXNA5B37R;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Orbit_AudioBooks/Info.plist;
+				INFOPLIST_FILE = OrbitAudioBooks/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Orbit Audiobooks";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -1293,160 +1126,6 @@
 			};
 			name = Release;
 		};
-		CCCF73292FAFAC16006FB746 /* Debug configuration for PBXNativeTarget "Orbit AudioBooks" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8AXNA5B37R;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudioBooks";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		CCCF732A2FAFAC16006FB746 /* Release configuration for PBXNativeTarget "Orbit AudioBooks" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8AXNA5B37R;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 26.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudioBooks";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
-		CCCF732B2FAFAC16006FB746 /* Debug configuration for PBXNativeTarget "Orbit AudioBooksTests" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8AXNA5B37R;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudioBooksTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orbit AudioBooks.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Orbit AudioBooks";
-			};
-			name = Debug;
-		};
-		CCCF732C2FAFAC16006FB746 /* Release configuration for PBXNativeTarget "Orbit AudioBooksTests" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8AXNA5B37R;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudioBooksTests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orbit AudioBooks.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Orbit AudioBooks";
-			};
-			name = Release;
-		};
-		CCCF732D2FAFAC16006FB746 /* Debug configuration for PBXNativeTarget "Orbit AudioBooksUITests" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8AXNA5B37R;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudioBooksUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "Orbit AudioBooks";
-			};
-			name = Debug;
-		};
-		CCCF732E2FAFAC16006FB746 /* Release configuration for PBXNativeTarget "Orbit AudioBooksUITests" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 8AXNA5B37R;
-				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 26.4;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Dan.Orbit-AudioBooksUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = "Orbit AudioBooks";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1511,30 +1190,6 @@
 			buildConfigurations = (
 				CCC48EC32FA6AB350003458B /* Debug configuration for PBXNativeTarget "Orbit Audiobooks Watch AppUITests" */,
 				CCC48EC42FA6AB350003458B /* Release configuration for PBXNativeTarget "Orbit Audiobooks Watch AppUITests" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		CCCF732F2FAFAC16006FB746 /* Build configuration list for PBXNativeTarget "Orbit AudioBooks" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				CCCF73292FAFAC16006FB746 /* Debug configuration for PBXNativeTarget "Orbit AudioBooks" */,
-				CCCF732A2FAFAC16006FB746 /* Release configuration for PBXNativeTarget "Orbit AudioBooks" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		CCCF73302FAFAC16006FB746 /* Build configuration list for PBXNativeTarget "Orbit AudioBooksTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				CCCF732B2FAFAC16006FB746 /* Debug configuration for PBXNativeTarget "Orbit AudioBooksTests" */,
-				CCCF732C2FAFAC16006FB746 /* Release configuration for PBXNativeTarget "Orbit AudioBooksTests" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		CCCF73312FAFAC16006FB746 /* Build configuration list for PBXNativeTarget "Orbit AudioBooksUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				CCCF732D2FAFAC16006FB746 /* Debug configuration for PBXNativeTarget "Orbit AudioBooksUITests" */,
-				CCCF732E2FAFAC16006FB746 /* Release configuration for PBXNativeTarget "Orbit AudioBooksUITests" */,
 			);
 			defaultConfigurationName = Release;
 		};
