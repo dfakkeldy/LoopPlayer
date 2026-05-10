@@ -1167,6 +1167,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         currentIndex = index
         currentTitle = tracks[index].title
         currentSubtitle = ""
+        thumbnailImage = nil
+        watchThumbnailData = nil
         
         if let folderURL = folderURL {
             persistence.saveLastTrack(for: folderURL.absoluteString, trackId: tracks[index].id)
@@ -1231,6 +1233,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         // Prime Now Playing metadata even before play (helps show stable controls)
         updateNowPlayingInfo(isPaused: true)
         updateProgressFromPlayer()
+        syncToWatch()
 
         Task { [weak self] in
             guard let self else { return }

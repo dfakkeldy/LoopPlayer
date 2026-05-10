@@ -6,8 +6,44 @@ import Observation
 import WidgetKit
 
 enum AppGroupDefaults {
+    static let suiteName = "group.com.orbitaudiobooks"
+    private static let migrationKey = "didMigrateWidgetDefaultsToAppGroup"
+
     static var shared: UserDefaults {
-        .standard
+        UserDefaults(suiteName: suiteName) ?? .standard
+    }
+
+    static func migrateStandardDefaultsIfNeeded() {
+        guard let groupedDefaults = UserDefaults(suiteName: suiteName),
+              !groupedDefaults.bool(forKey: migrationKey) else {
+            return
+        }
+
+        let keys = [
+            "isPlaying",
+            "title",
+            "progressFraction",
+            "loopMode",
+            "currentTime",
+            "playbackSpeed",
+            "bookmarkStorageKey",
+            "folderKey",
+            "trackId",
+            "thumbnailData",
+            "watchPage1",
+            "watchPage2",
+            "crownAction"
+        ]
+
+        for key in keys {
+            guard groupedDefaults.object(forKey: key) == nil,
+                  let value = UserDefaults.standard.object(forKey: key) else {
+                continue
+            }
+            groupedDefaults.set(value, forKey: key)
+        }
+
+        groupedDefaults.set(true, forKey: migrationKey)
     }
 }
 
@@ -129,6 +165,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
 
     override init() {
         super.init()
+        AppGroupDefaults.migrateStandardDefaultsIfNeeded()
         loadPersistedState()
         if WCSession.isSupported() {
             let session = WCSession.default
@@ -216,6 +253,8 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     private func applyState(_ state: [String: Any]) {
         guard !state.isEmpty else { return }
         DispatchQueue.main.async {
+            let previousTrackId = self.trackId
+
             if let crownAction = state["crownAction"] as? String {
                 self.defaults.set(crownAction, forKey: "crownAction")
             }
@@ -278,6 +317,9 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 if let image = UIImage(data: thumbnailData) {
                     self.thumbnailImage = image
                 }
+            } else if state["trackId"] != nil, self.trackId != previousTrackId {
+                self.defaults.removeObject(forKey: "thumbnailData")
+                self.thumbnailImage = nil
             } else if let hasThumbnail = state["hasThumbnail"] as? Bool, !hasThumbnail {
                 self.defaults.removeObject(forKey: "thumbnailData")
                 self.thumbnailImage = nil
@@ -285,7 +327,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             if state["commandResult"] as? String == "bookmarkJump" {
                 WKInterfaceDevice.current().play(.success)
             }
-            WidgetCenter.shared.reloadAllTimelines()
+            WidgetCenter.shared.reloadTimelines(ofKind: "Orbit_Audiobooks_Widget")
         }
     }
 

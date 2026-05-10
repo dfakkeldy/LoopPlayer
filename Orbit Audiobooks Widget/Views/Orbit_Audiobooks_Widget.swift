@@ -3,6 +3,8 @@ import SwiftUI
 import AppIntents
 
 struct Provider: TimelineProvider {
+    private static let refreshInterval: TimeInterval = 60
+
     func placeholder(in context: Context) -> SimpleEntry {
         SimpleEntry(date: Date(), title: "Book Title", isPlaying: false, progressFraction: 0.3, thumbnailData: nil)
     }
@@ -18,28 +20,23 @@ struct Provider: TimelineProvider {
         return data
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
+    private func currentEntry() -> SimpleEntry {
         let defaults = AppGroupDefaults.shared
         let title = defaults.string(forKey: "title") ?? "No track"
         let isPlaying = defaults.bool(forKey: "isPlaying")
         let progressFraction = defaults.double(forKey: "progressFraction")
         let thumbnailData = safelyDownsampledData(defaults.data(forKey: "thumbnailData"))
 
-        let entry = SimpleEntry(date: Date(), title: title, isPlaying: isPlaying, progressFraction: progressFraction, thumbnailData: thumbnailData)
-        completion(entry)
+        return SimpleEntry(date: Date(), title: title, isPlaying: isPlaying, progressFraction: progressFraction, thumbnailData: thumbnailData)
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
+        completion(currentEntry())
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> ()) {
-        let defaults = AppGroupDefaults.shared
-        let title = defaults.string(forKey: "title") ?? "No track"
-        let isPlaying = defaults.bool(forKey: "isPlaying")
-        let progressFraction = defaults.double(forKey: "progressFraction")
-        let thumbnailData = safelyDownsampledData(defaults.data(forKey: "thumbnailData"))
-
-        let entry = SimpleEntry(date: Date(), title: title, isPlaying: isPlaying, progressFraction: progressFraction, thumbnailData: thumbnailData)
-
-        // Refresh periodically, but mostly we rely on reloadAllTimelines() when data changes
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
+        let entry = currentEntry()
+        let nextUpdate = Date().addingTimeInterval(Self.refreshInterval)
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         completion(timeline)
     }

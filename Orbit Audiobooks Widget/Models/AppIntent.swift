@@ -44,7 +44,7 @@ struct TogglePlaybackIntent: AppIntent {
                 let defaults = AppGroupDefaults.shared
                 let currentIsPlaying = defaults.bool(forKey: "isPlaying")
                 defaults.set(!currentIsPlaying, forKey: "isPlaying")
-                WidgetCenter.shared.reloadAllTimelines()
+                WidgetCenter.shared.reloadTimelines(ofKind: "Orbit_Audiobooks_Widget")
                 return .result()
             }
             
@@ -71,7 +71,7 @@ struct TogglePlaybackIntent: AppIntent {
         let defaults = AppGroupDefaults.shared
         let currentIsPlaying = defaults.bool(forKey: "isPlaying")
         defaults.set(!currentIsPlaying, forKey: "isPlaying")
-        WidgetCenter.shared.reloadAllTimelines()
+        WidgetCenter.shared.reloadTimelines(ofKind: "Orbit_Audiobooks_Widget")
         
         return .result()
     }
