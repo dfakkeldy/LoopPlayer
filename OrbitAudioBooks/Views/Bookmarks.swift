@@ -293,6 +293,9 @@ struct EditBookmarkView: View {
     @State private var previewEngine: AVAudioEngine?
     @State private var previewPlayerNode: AVAudioPlayerNode?
     @State private var isPreviewPlaying: Bool = false
+    /// Tracks whether the main audiobook player was playing when we started
+    /// the voice memo preview, so we can optionally resume it afterwards.
+    @State private var didPauseMainPlayerForPreview: Bool = false
     @State private var alertMessage: String = ""
     @State private var isShowingAlert: Bool = false
 
@@ -524,6 +527,17 @@ struct EditBookmarkView: View {
         }
         let probe = Bookmark(timestamp: 0, voiceMemoFileName: fileName)
         guard let url = probe.voiceMemoURL(in: model.folderURL) else { return }
+
+        // Enforce mutually-exclusive audio streams: pause the main audiobook
+        // before starting the voice-memo preview so we never have two
+        // concurrent streams playing through the output.
+        if model.isPlaying {
+            model.pause()
+            didPauseMainPlayerForPreview = true
+        } else {
+            didPauseMainPlayerForPreview = false
+        }
+
         do {
             let audioFile = try AVAudioFile(forReading: url)
             let engine = AVAudioEngine()
@@ -552,6 +566,18 @@ struct EditBookmarkView: View {
         previewPlayerNode = nil
         previewEngine = nil
         isPreviewPlaying = false
+
+        // Restore the shared audio session category for spoken audiobook
+        // playback (the preview engine may have nudged the category) without
+        // deactivating the session — that would be the hack we want to avoid.
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
+
+        // Optionally resume the main audiobook if we were the ones who paused
+        // it when starting the preview.
+        if didPauseMainPlayerForPreview {
+            didPauseMainPlayerForPreview = false
+            model.play()
+        }
     }
 
     private func formatHMS(_ seconds: TimeInterval) -> String {

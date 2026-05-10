@@ -225,6 +225,15 @@ final class PlayerModel: NSObject, WCSessionDelegate {
                 case "toggle": self.togglePlayPause()
                 case "toggleLoopMode", "cycleLoopMode":
                     self.cycleLoopMode()
+                case "cycleSpeed":
+                    if let newSpeed = message["playbackSpeed"] as? Double {
+                        self.setSpeed(Float(newSpeed))
+                    } else {
+                        let speeds: [Float] = [1.0, 1.25, 1.5, 2.0]
+                        let idx = speeds.firstIndex(of: self.speed) ?? -1
+                        let next = speeds[(idx + 1) % speeds.count]
+                        self.setSpeed(next)
+                    }
                 case "addBookmark":
                     _ = self.addBookmarkAtCurrentTime()
                 case "addWatchTextBookmark":
@@ -283,6 +292,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         let crownAction = UserDefaults.standard.string(forKey: "crownAction") ?? "volume"
         context["crownAction"] = crownAction
         context["loopMode"] = loopMode.rawValue
+        context["playbackSpeed"] = Double(speed)
         
         context["watchPage1"] = UserDefaults.standard.string(forKey: "watchPage1") ?? "empty,empty,skipBackward,playPause,skipForward"
         context["watchPage2"] = UserDefaults.standard.string(forKey: "watchPage2") ?? "loopMode,empty,speed,sleepTimer,bookmark"
@@ -2214,6 +2224,10 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     /// playback (when `playBookmarksInline` is enabled).
     private func checkBookmarkVoiceMemoTrigger(at currentSeconds: Double, previousSeconds: Double?) {
         guard !isPlayingVoiceMemo, isPlaying, !isManualSeeking else { return }
+        // In bookmark-loop mode the player repeatedly traverses bookmark
+        // boundaries by design; firing the voice memo each time would create
+        // an unwanted overlay loop, so suppress memo triggers entirely.
+        guard loopMode != .bookmark else { return }
         guard currentSeconds.isFinite else { return }
         // Honor user preference.
         guard UserDefaults.standard.bool(forKey: "playBookmarksInline") else { return }

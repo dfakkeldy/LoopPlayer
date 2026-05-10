@@ -69,6 +69,10 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var page1Slots: [WatchAction] = [.empty, .empty, .skipBackward, .playPause, .skipForward]
     var page2Slots: [WatchAction] = [.loopMode, .empty, .speed, .sleepTimer, .bookmark]
 
+    let availableSpeeds: [Double] = [1.0, 1.25, 1.5, 2.0]
+    var currentSpeedIndex: Int = 0
+    var playbackSpeed: Double { availableSpeeds[currentSpeedIndex] }
+
     private let defaults = UserDefaults(suiteName: "group.com.orbitaudiobooks")
 
     override init() {
@@ -87,6 +91,10 @@ class WatchViewModel: NSObject, WCSessionDelegate {
         progressFraction = defaults?.double(forKey: "progressFraction") ?? 0.0
         loopMode = defaults?.string(forKey: "loopMode") ?? "off"
         currentTime = defaults?.double(forKey: "currentTime") ?? 0
+        if let storedSpeed = defaults?.object(forKey: "playbackSpeed") as? Double,
+           let idx = availableSpeeds.firstIndex(where: { abs($0 - storedSpeed) < 0.001 }) {
+            currentSpeedIndex = idx
+        }
         bookmarkStorageKey = defaults?.string(forKey: "bookmarkStorageKey")
         folderKey = defaults?.string(forKey: "folderKey")
         trackId = defaults?.string(forKey: "trackId")
@@ -166,6 +174,11 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             if let loopMode = state["loopMode"] as? String {
                 self.loopMode = loopMode
                 self.defaults?.set(loopMode, forKey: "loopMode")
+            }
+            if let playbackSpeed = state["playbackSpeed"] as? Double,
+               let idx = self.availableSpeeds.firstIndex(where: { abs($0 - playbackSpeed) < 0.001 }) {
+                self.currentSpeedIndex = idx
+                self.defaults?.set(playbackSpeed, forKey: "playbackSpeed")
             }
             if let watchPage1 = state["watchPage1"] as? String {
                 self.page1Slots = self.padded(self.parseSlots(watchPage1))
@@ -280,9 +293,18 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             }
         case .loopMode:
             sendCommand("cycleLoopMode")
+        case .speed:
+            cycleSpeed()
         default:
             sendCommand(action.command)
         }
+    }
+
+    func cycleSpeed() {
+        currentSpeedIndex = (currentSpeedIndex + 1) % availableSpeeds.count
+        let newSpeed = availableSpeeds[currentSpeedIndex]
+        defaults?.set(newSpeed, forKey: "playbackSpeed")
+        sendCommand("cycleSpeed", params: ["playbackSpeed": newSpeed])
     }
 
     func queueTextBookmark(note: String) throws {
@@ -629,19 +651,26 @@ private struct TopSlotButton: View {
                     viewModel.handle(action)
                 }
             } label: {
-                if action == .loopMode && viewModel.loopMode == "bookmark" {
-                    ZStack {
-                        Image(systemName: "arrow.trianglehead.clockwise")
+                Group {
+                    if action == .loopMode && viewModel.loopMode == "bookmark" {
+                        ZStack {
+                            Image(systemName: "arrow.trianglehead.clockwise")
+                                .font(.system(size: 24))
+                            Image(systemName: "bookmark.fill")
+                                .font(.system(size: 8, weight: .bold))
+                        }
+                    } else if action == .speed {
+                        Text(formatSpeed(viewModel.playbackSpeed))
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                    } else {
+                        Image(systemName: iconName)
                             .font(.system(size: 24))
-                        Image(systemName: "bookmark.fill")
-                            .font(.system(size: 8, weight: .bold))
                     }
-                    .foregroundStyle(.white)
-                } else {
-                    Image(systemName: iconName)
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
                 }
+                .foregroundStyle(.white)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(accessibilityLabelText)
@@ -682,6 +711,16 @@ private struct TopSlotButton: View {
         case .empty: return ""
         }
     }
+}
+
+fileprivate func formatSpeed(_ speed: Double) -> String {
+    let formatted: String
+    if speed.truncatingRemainder(dividingBy: 1) == 0 {
+        formatted = String(format: "%.0f", speed)
+    } else {
+        formatted = String(speed)
+    }
+    return "\(formatted)x"
 }
 
 // MARK: - Bottom transport row (left button | play+ring | right button)
@@ -725,6 +764,10 @@ private struct SideTransportButton: View {
                         Image(systemName: "bookmark.fill")
                             .font(.system(size: 7, weight: .bold))
                     }
+                } else if action == .speed {
+                    Text(formatSpeed(viewModel.playbackSpeed))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
                 } else {
                     Image(systemName: sideIconName)
                         .font(.system(size: 20))
