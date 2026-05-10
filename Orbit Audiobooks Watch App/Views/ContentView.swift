@@ -5,6 +5,12 @@ import WatchKit
 import Observation
 import WidgetKit
 
+enum AppGroupDefaults {
+    static var shared: UserDefaults {
+        .standard
+    }
+}
+
 // MARK: - WatchAction
 
 enum WatchAction: String, Codable, CaseIterable, Identifiable {
@@ -119,7 +125,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var currentSpeedIndex: Int = 0
     var playbackSpeed: Double { availableSpeeds[currentSpeedIndex] }
 
-    private let defaults = UserDefaults(suiteName: "group.com.orbitaudiobooks")
+    @ObservationIgnored private let defaults = AppGroupDefaults.shared
 
     override init() {
         super.init()
@@ -132,28 +138,28 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     }
 
     private func loadPersistedState() {
-        isPlaying = defaults?.bool(forKey: "isPlaying") ?? false
-        title = defaults?.string(forKey: "title") ?? "No track selected"
-        progressFraction = defaults?.double(forKey: "progressFraction") ?? 0.0
-        loopMode = defaults?.string(forKey: "loopMode") ?? "off"
-        currentTime = defaults?.double(forKey: "currentTime") ?? 0
-        if let storedSpeed = defaults?.object(forKey: "playbackSpeed") as? Double,
+        isPlaying = defaults.bool(forKey: "isPlaying")
+        title = defaults.string(forKey: "title") ?? "No track selected"
+        progressFraction = defaults.double(forKey: "progressFraction")
+        loopMode = defaults.string(forKey: "loopMode") ?? "off"
+        currentTime = defaults.double(forKey: "currentTime")
+        if let storedSpeed = defaults.object(forKey: "playbackSpeed") as? Double,
            let idx = availableSpeeds.firstIndex(where: { abs($0 - storedSpeed) < 0.001 }) {
             currentSpeedIndex = idx
         }
-        bookmarkStorageKey = defaults?.string(forKey: "bookmarkStorageKey")
-        folderKey = defaults?.string(forKey: "folderKey")
-        trackId = defaults?.string(forKey: "trackId")
+        bookmarkStorageKey = defaults.string(forKey: "bookmarkStorageKey")
+        folderKey = defaults.string(forKey: "folderKey")
+        trackId = defaults.string(forKey: "trackId")
 
-        if let thumbnailData = defaults?.data(forKey: "thumbnailData"),
+        if let thumbnailData = defaults.data(forKey: "thumbnailData"),
            let image = UIImage(data: thumbnailData) {
             thumbnailImage = image
         }
 
-        if let raw = defaults?.string(forKey: "watchPage1") {
+        if let raw = defaults.string(forKey: "watchPage1") {
             page1Slots = padded(parseSlots(raw))
         }
-        if let raw = defaults?.string(forKey: "watchPage2") {
+        if let raw = defaults.string(forKey: "watchPage2") {
             page2Slots = padded(parseSlots(raw))
         }
     }
@@ -169,8 +175,12 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        guard activationState == .activated else { return }
-        applyState(session.receivedApplicationContext)
+        guard activationState == .activated else {
+            if let error {
+                print("WatchConnectivity activation failed: \(error)")
+            }
+            return
+        }
         requestCurrentState()
     }
 
@@ -180,46 +190,66 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
+        guard session.activationState == .activated else { return }
         applyState(applicationContext)
+    }
+
+    func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
+        guard session.activationState == .activated else { return }
+        applyState(message)
+    }
+
+    func session(_ session: WCSession, didReceiveMessage message: [String : Any], replyHandler: @escaping ([String : Any]) -> Void) {
+        guard session.activationState == .activated else {
+            replyHandler([:])
+            return
+        }
+        applyState(message)
+        replyHandler(["handled": true])
+    }
+
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any] = [:]) {
+        guard session.activationState == .activated else { return }
+        applyState(userInfo)
     }
 
     private func applyState(_ state: [String: Any]) {
         guard !state.isEmpty else { return }
         DispatchQueue.main.async {
             if let crownAction = state["crownAction"] as? String {
-                self.defaults?.set(crownAction, forKey: "crownAction")
+                self.defaults.set(crownAction, forKey: "crownAction")
             }
             if let isPlaying = state["isPlaying"] as? Bool {
                 self.isPlaying = isPlaying
-                self.defaults?.set(isPlaying, forKey: "isPlaying")
+                self.defaults.set(isPlaying, forKey: "isPlaying")
             }
             if let title = state["title"] as? String {
                 self.title = title
-                self.defaults?.set(title, forKey: "title")
+                self.defaults.set(title, forKey: "title")
             }
             if let progressFraction = state["progressFraction"] as? Double {
                 self.progressFraction = progressFraction
-                self.defaults?.set(progressFraction, forKey: "progressFraction")
+                self.defaults.set(progressFraction, forKey: "progressFraction")
             }
             if let currentTime = state["currentTime"] as? Double {
                 self.currentTime = currentTime
-                self.defaults?.set(currentTime, forKey: "currentTime")
+                self.defaults.set(currentTime, forKey: "currentTime")
             }
             if let bookmarkStorageKey = state["bookmarkStorageKey"] as? String {
                 self.bookmarkStorageKey = bookmarkStorageKey
-                self.defaults?.set(bookmarkStorageKey, forKey: "bookmarkStorageKey")
+                self.defaults.set(bookmarkStorageKey, forKey: "bookmarkStorageKey")
             }
             if let folderKey = state["folderKey"] as? String {
                 self.folderKey = folderKey
-                self.defaults?.set(folderKey, forKey: "folderKey")
+                self.defaults.set(folderKey, forKey: "folderKey")
             }
             if let trackId = state["trackId"] as? String {
                 self.trackId = trackId
-                self.defaults?.set(trackId, forKey: "trackId")
+                self.defaults.set(trackId, forKey: "trackId")
             }
             if let loopMode = state["loopMode"] as? String {
                 self.loopMode = loopMode
-                self.defaults?.set(loopMode, forKey: "loopMode")
+                self.defaults.set(loopMode, forKey: "loopMode")
             }
             if let stm = state["sleepTimerMode"] as? String {
                 self.sleepTimerMode = stm
@@ -233,23 +263,23 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             if let playbackSpeed = state["playbackSpeed"] as? Double,
                let idx = self.availableSpeeds.firstIndex(where: { abs($0 - playbackSpeed) < 0.001 }) {
                 self.currentSpeedIndex = idx
-                self.defaults?.set(playbackSpeed, forKey: "playbackSpeed")
+                self.defaults.set(playbackSpeed, forKey: "playbackSpeed")
             }
             if let watchPage1 = state["watchPage1"] as? String {
                 self.page1Slots = self.padded(self.parseSlots(watchPage1))
-                self.defaults?.set(watchPage1, forKey: "watchPage1")
+                self.defaults.set(watchPage1, forKey: "watchPage1")
             }
             if let watchPage2 = state["watchPage2"] as? String {
                 self.page2Slots = self.padded(self.parseSlots(watchPage2))
-                self.defaults?.set(watchPage2, forKey: "watchPage2")
+                self.defaults.set(watchPage2, forKey: "watchPage2")
             }
             if let thumbnailData = state["thumbnailData"] as? Data {
-                self.defaults?.set(thumbnailData, forKey: "thumbnailData")
+                self.defaults.set(thumbnailData, forKey: "thumbnailData")
                 if let image = UIImage(data: thumbnailData) {
                     self.thumbnailImage = image
                 }
             } else if let hasThumbnail = state["hasThumbnail"] as? Bool, !hasThumbnail {
-                self.defaults?.removeObject(forKey: "thumbnailData")
+                self.defaults.removeObject(forKey: "thumbnailData")
                 self.thumbnailImage = nil
             }
             if state["commandResult"] as? String == "bookmarkJump" {
@@ -263,10 +293,6 @@ class WatchViewModel: NSObject, WCSessionDelegate {
         guard WCSession.isSupported() else { return }
 
         let session = WCSession.default
-        if session.activationState == .activated {
-            applyState(session.receivedApplicationContext)
-        }
-
         guard session.activationState == .activated, session.isReachable else { return }
         session.sendMessage(["command": "requestState"], replyHandler: { [weak self] reply in
             self?.applyState(reply)
@@ -287,9 +313,6 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     func sendCommand(_ command: String, params: [String: Any]? = nil) -> Bool {
         guard !command.isEmpty else { return false }
         let session = WCSession.default
-        if session.activationState == .activated {
-            applyState(session.receivedApplicationContext)
-        }
 
         var didSend = false
         if session.activationState == .activated, session.isReachable {
@@ -387,7 +410,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     func cycleSpeed() {
         currentSpeedIndex = (currentSpeedIndex + 1) % availableSpeeds.count
         let newSpeed = availableSpeeds[currentSpeedIndex]
-        defaults?.set(newSpeed, forKey: "playbackSpeed")
+        defaults.set(newSpeed, forKey: "playbackSpeed")
         sendCommand("cycleSpeed", params: ["playbackSpeed": newSpeed])
     }
 
@@ -615,8 +638,9 @@ private struct ToggleTraitModifier: ViewModifier {
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = WatchViewModel()
-    @AppStorage("crownAction", store: UserDefaults(suiteName: "group.com.orbitaudiobooks")) private var crownAction = "volume"
+    @AppStorage("crownAction", store: AppGroupDefaults.shared) private var crownAction = "volume"
     @State private var crownAccumulator: Double = 0.0
+    @State private var previousCrownOffset: Double = 0.0
     @State private var selectedPage: Int = 0
     @State private var isShowingNewBookmark = false
     @State private var isShowingSleepTimer = false
@@ -654,33 +678,37 @@ struct ContentView: View {
             }
             .tabViewStyle(.page)
         }
-        .focusable()
-        .digitalCrownRotation($crownAccumulator)
+        .focusable(true, interactions: .edit)
         .focused($isFocused)
+        .defaultFocus($isFocused, true)
+        .digitalCrownRotation($crownAccumulator) { event in
+            handleCrownRotation(offset: event.offset)
+        }
         .sheet(isPresented: $isShowingNewBookmark) {
             NewBookmarkView(viewModel: viewModel)
         }
         .sheet(isPresented: $isShowingSleepTimer) {
             SleepTimerView(viewModel: viewModel)
         }
-        .onChange(of: crownAccumulator) { oldValue, newValue in
-            let delta = newValue - oldValue
-            if crownAction == "scrub" {
-                viewModel.sendCommand("scrubDelta", params: ["delta": delta])
-            } else {
-                viewModel.sendCommand("volumeDelta", params: ["delta": delta])
-            }
-        }
         .onAppear {
-            isFocused = true
             viewModel.requestCurrentState()
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
-            isFocused = true
             viewModel.requestCurrentState()
         }
-        .onChange(of: crownAction) { _, _ in isFocused = true }
+    }
+
+    private func handleCrownRotation(offset: Double) {
+        let delta = offset - previousCrownOffset
+        previousCrownOffset = offset
+        guard delta != 0 else { return }
+
+        if crownAction == "scrub" {
+            viewModel.sendCommand("scrubDelta", params: ["delta": delta])
+        } else {
+            viewModel.sendCommand("volumeDelta", params: ["delta": delta])
+        }
     }
 }
 

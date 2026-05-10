@@ -19,22 +19,22 @@ struct Provider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (SimpleEntry) -> ()) {
-        let defaults = UserDefaults(suiteName: "group.com.orbitaudiobooks")
-        let title = defaults?.string(forKey: "title") ?? "No track"
-        let isPlaying = defaults?.bool(forKey: "isPlaying") ?? false
-        let progressFraction = defaults?.double(forKey: "progressFraction") ?? 0.0
-        let thumbnailData = safelyDownsampledData(defaults?.data(forKey: "thumbnailData"))
+        let defaults = AppGroupDefaults.shared
+        let title = defaults.string(forKey: "title") ?? "No track"
+        let isPlaying = defaults.bool(forKey: "isPlaying")
+        let progressFraction = defaults.double(forKey: "progressFraction")
+        let thumbnailData = safelyDownsampledData(defaults.data(forKey: "thumbnailData"))
 
         let entry = SimpleEntry(date: Date(), title: title, isPlaying: isPlaying, progressFraction: progressFraction, thumbnailData: thumbnailData)
         completion(entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SimpleEntry>) -> ()) {
-        let defaults = UserDefaults(suiteName: "group.com.orbitaudiobooks")
-        let title = defaults?.string(forKey: "title") ?? "No track"
-        let isPlaying = defaults?.bool(forKey: "isPlaying") ?? false
-        let progressFraction = defaults?.double(forKey: "progressFraction") ?? 0.0
-        let thumbnailData = safelyDownsampledData(defaults?.data(forKey: "thumbnailData"))
+        let defaults = AppGroupDefaults.shared
+        let title = defaults.string(forKey: "title") ?? "No track"
+        let isPlaying = defaults.bool(forKey: "isPlaying")
+        let progressFraction = defaults.double(forKey: "progressFraction")
+        let thumbnailData = safelyDownsampledData(defaults.data(forKey: "thumbnailData"))
 
         let entry = SimpleEntry(date: Date(), title: title, isPlaying: isPlaying, progressFraction: progressFraction, thumbnailData: thumbnailData)
 

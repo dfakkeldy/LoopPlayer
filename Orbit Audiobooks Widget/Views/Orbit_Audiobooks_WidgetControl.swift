@@ -8,8 +8,8 @@ struct Orbit_Audiobooks_WidgetControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: TogglePlaybackIntent()) {
-                let defaults = UserDefaults(suiteName: "group.com.orbitaudiobooks")
-                let isPlaying = defaults?.bool(forKey: "isPlaying") ?? false
+                let defaults = AppGroupDefaults.shared
+                let isPlaying = defaults.bool(forKey: "isPlaying")
                 Label(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill")
             }
         }

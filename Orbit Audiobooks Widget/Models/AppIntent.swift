@@ -2,10 +2,20 @@ import WidgetKit
 import AppIntents
 import WatchConnectivity
 
+enum AppGroupDefaults {
+    static let suiteName = "group.com.orbitaudiobooks"
+
+    static var shared: UserDefaults {
+        UserDefaults(suiteName: suiteName) ?? .standard
+    }
+}
+
 class SessionDelegator: NSObject, WCSessionDelegate {
     var continuation: CheckedContinuation<Void, Never>?
-    
+    private(set) var activationState: WCSessionActivationState = .notActivated
+
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        self.activationState = activationState
         continuation?.resume()
         continuation = nil
     }
@@ -21,9 +31,7 @@ struct TogglePlaybackIntent: AppIntent {
             let session = WCSession.default
             
             let delegator = SessionDelegator()
-            if session.delegate == nil {
-                session.delegate = delegator
-            }
+            session.delegate = delegator
             
             if session.activationState != .activated {
                 session.activate()
@@ -31,8 +39,14 @@ struct TogglePlaybackIntent: AppIntent {
                     delegator.continuation = continuation
                 }
             }
-            
-            _ = delegator
+
+            guard session.activationState == .activated || delegator.activationState == .activated else {
+                let defaults = AppGroupDefaults.shared
+                let currentIsPlaying = defaults.bool(forKey: "isPlaying")
+                defaults.set(!currentIsPlaying, forKey: "isPlaying")
+                WidgetCenter.shared.reloadAllTimelines()
+                return .result()
+            }
             
             let message = ["command": "toggle", "timestamp": Date().timeIntervalSince1970] as [String : Any]
             
@@ -54,9 +68,9 @@ struct TogglePlaybackIntent: AppIntent {
         }
         
         // Optimistically toggle state in UserDefaults for immediate UI update
-        let defaults = UserDefaults(suiteName: "group.com.orbitaudiobooks")
-        let currentIsPlaying = defaults?.bool(forKey: "isPlaying") ?? false
-        defaults?.set(!currentIsPlaying, forKey: "isPlaying")
+        let defaults = AppGroupDefaults.shared
+        let currentIsPlaying = defaults.bool(forKey: "isPlaying")
+        defaults.set(!currentIsPlaying, forKey: "isPlaying")
         WidgetCenter.shared.reloadAllTimelines()
         
         return .result()

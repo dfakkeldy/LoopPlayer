@@ -183,7 +183,17 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         }
     }
     
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        guard activationState == .activated else {
+            if let error {
+                print("WatchConnectivity activation failed: \(error)")
+            }
+            return
+        }
+        DispatchQueue.main.async { [weak self] in
+            self?.syncToWatch()
+        }
+    }
     func sessionDidBecomeInactive(_ session: WCSession) {}
     func sessionDidDeactivate(_ session: WCSession) {
         session.activate()
@@ -289,6 +299,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     }
     
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
+        guard session.activationState == .activated else { return }
         DispatchQueue.main.async {
             if let command = applicationContext["command"] as? String {
                 if command == "toggle" {
@@ -299,14 +310,18 @@ final class PlayerModel: NSObject, WCSessionDelegate {
     }
     
     func syncToWatch() {
-        guard WCSession.default.activationState == .activated else { return }
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
 
         let context = watchStateContext()
 
-        do {
-            try WCSession.default.updateApplicationContext(context)
-        } catch {
-            print("Failed to sync to watch: \(error)")
+        if session.isReachable {
+            session.sendMessage(context, replyHandler: nil) { error in
+                print("Immediate watch sync failed: \(error)")
+                WCSession.default.transferUserInfo(context)
+            }
+        } else {
+            session.transferUserInfo(context)
         }
     }
 
