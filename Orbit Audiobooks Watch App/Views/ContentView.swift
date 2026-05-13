@@ -13,6 +13,11 @@ enum AppGroupDefaults {
         UserDefaults(suiteName: suiteName) ?? .standard
     }
 
+    static var isHapticFeedbackEnabled: Bool {
+        get { shared.object(forKey: "isHapticFeedbackEnabled") as? Bool ?? true }
+        set { shared.set(newValue, forKey: "isHapticFeedbackEnabled") }
+    }
+
     static func migrateStandardDefaultsIfNeeded() {
         guard let groupedDefaults = UserDefaults(suiteName: suiteName),
               !groupedDefaults.bool(forKey: migrationKey) else {
@@ -32,7 +37,8 @@ enum AppGroupDefaults {
             "thumbnailData",
             "watchPage1",
             "watchPage2",
-            "crownAction"
+            "crownAction",
+            "isHapticFeedbackEnabled"
         ]
 
         for key in keys {
@@ -258,6 +264,9 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             if let crownAction = state["crownAction"] as? String {
                 self.defaults.set(crownAction, forKey: "crownAction")
             }
+            if let isHapticEnabled = state["isHapticFeedbackEnabled"] as? Bool {
+                AppGroupDefaults.isHapticFeedbackEnabled = isHapticEnabled
+            }
             if let isPlaying = state["isPlaying"] as? Bool {
                 self.isPlaying = isPlaying
                 self.defaults.set(isPlaying, forKey: "isPlaying")
@@ -387,15 +396,17 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             return true
         }
 
-        switch command {
-        case "play", "pause", "toggle":
-            WKInterfaceDevice.current().play(.click)
-        case "next", "skipForward":
-            WKInterfaceDevice.current().play(.directionUp)
-        case "skipBackward", "previous":
-            WKInterfaceDevice.current().play(.directionDown)
-        default:
-            WKInterfaceDevice.current().play(.click)
+        if AppGroupDefaults.isHapticFeedbackEnabled {
+            switch command {
+            case "play", "pause", "toggle":
+                WKInterfaceDevice.current().play(.click)
+            case "next", "skipForward":
+                WKInterfaceDevice.current().play(.directionUp)
+            case "skipBackward", "previous":
+                WKInterfaceDevice.current().play(.directionDown)
+            default:
+                WKInterfaceDevice.current().play(.click)
+            }
         }
 
         return true

@@ -8,6 +8,11 @@ enum AppGroupDefaults {
     static var shared: UserDefaults {
         UserDefaults(suiteName: suiteName) ?? .standard
     }
+    
+    static var isHapticFeedbackEnabled: Bool {
+        get { shared.object(forKey: "isHapticFeedbackEnabled") as? Bool ?? true }
+        set { shared.set(newValue, forKey: "isHapticFeedbackEnabled") }
+    }
 }
 
 class SessionDelegator: NSObject, WCSessionDelegate {

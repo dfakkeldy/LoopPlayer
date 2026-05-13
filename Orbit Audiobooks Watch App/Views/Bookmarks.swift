@@ -62,7 +62,9 @@ private struct WatchBookmarkRow: View {
             if bookmark.hasAudio {
                 Button {
                     isPlaying.toggle()
-                    WKInterfaceDevice.current().play(.click)
+                    if AppGroupDefaults.isHapticFeedbackEnabled {
+                        WKInterfaceDevice.current().play(.click)
+                    }
                 } label: {
                     Image(systemName: isPlaying ? "stop.fill" : "play.fill")
                         .font(.title3)

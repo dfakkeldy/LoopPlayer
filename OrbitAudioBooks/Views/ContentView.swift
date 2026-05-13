@@ -357,6 +357,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         
         let crownAction = UserDefaults.standard.string(forKey: "crownAction") ?? "volume"
         context["crownAction"] = crownAction
+        context["isHapticFeedbackEnabled"] = AppGroupDefaults.isHapticFeedbackEnabled
         context["loopMode"] = loopMode.rawValue
         context["playbackSpeed"] = Double(speed)
         
@@ -3694,6 +3695,26 @@ struct WatchAppSettingsView: View {
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
+                }
+
+                // MARK: Haptics
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Haptics")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+
+                    Toggle("Button Haptics", isOn: Binding(
+                        get: { AppGroupDefaults.isHapticFeedbackEnabled },
+                        set: { 
+                            AppGroupDefaults.isHapticFeedbackEnabled = $0
+                            model.syncToWatch()
+                        }
+                    ))
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(.quaternary)
+                    )
                 }
 
                 // MARK: Watch App Designer
