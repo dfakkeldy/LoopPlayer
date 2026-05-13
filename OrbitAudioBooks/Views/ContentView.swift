@@ -385,9 +385,20 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         let title = chapters.count >= 2 ? (currentSubtitle.isEmpty ? "Chapter \((currentChapterIndex ?? 0) + 1)" : currentSubtitle) : currentTitle
         context["title"] = title
         
-        // Dual-progress: total book progress
-        let totalCount = Double(tracks.count)
-        context["totalProgressFraction"] = totalCount > 0 ? (Double(currentIndex) + progressFraction) / totalCount : 0.0
+        // Dual-progress: total book progress (time-based when possible)
+        // For single-file M4B, currentTime is the absolute file position and
+        // durationSeconds is the full file duration — dividing yields true
+        // time-based book progress instead of a chapter-count approximation.
+        if let duration = durationSeconds, duration.isFinite, duration > 0 {
+            let totalElapsed = player?.currentTime().seconds ?? 0
+            context["totalProgressFraction"] = min(1, max(0, totalElapsed / duration))
+            context["totalBookDuration"] = duration
+        } else {
+            // Fallback: track-count-based for multi-file playlists where
+            // individual track durations aren't aggregated.
+            let totalCount = Double(tracks.count)
+            context["totalProgressFraction"] = totalCount > 0 ? (Double(currentIndex) + progressFraction) / totalCount : 0.0
+        }
         
         let crownAction = UserDefaults.standard.string(forKey: "crownAction") ?? "volume"
         context["crownAction"] = crownAction
@@ -398,6 +409,10 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         
         context["watchPage1"] = UserDefaults.standard.string(forKey: "watchPage1") ?? "empty,empty,skipBackward,playPause,skipForward"
         context["watchPage2"] = UserDefaults.standard.string(forKey: "watchPage2") ?? "loopMode,empty,speed,sleepTimer,bookmark"
+        context["linearBarMode"] = UserDefaults.standard.string(forKey: "linearBarMode") ?? "total"
+        context["linearBarHidden"] = UserDefaults.standard.bool(forKey: "linearBarHidden")
+        context["circularRingMode"] = UserDefaults.standard.string(forKey: "circularRingMode") ?? "chapter"
+        context["circularRingHidden"] = UserDefaults.standard.bool(forKey: "circularRingHidden")
         context["hasThumbnail"] = watchThumbnailData != nil
 
         // Sleep timer state for watch UI.
@@ -3734,6 +3749,12 @@ struct WatchAppSettingsView: View {
     @AppStorage("watchPage2") private var page2Raw: String = "loopMode,empty,speed,sleepTimer,bookmark"
     @AppStorage("watchQuickBookmarkTimeoutSeconds", store: AppGroupDefaults.shared) private var quickBookmarkTimeoutSeconds: Int = 5
 
+    // Progress indicator configuration
+    @AppStorage("linearBarMode") private var linearBarMode: String = "total"
+    @AppStorage("linearBarHidden") private var linearBarHidden: Bool = false
+    @AppStorage("circularRingMode") private var circularRingMode: String = "chapter"
+    @AppStorage("circularRingHidden") private var circularRingHidden: Bool = false
+
     @State private var page1Slots: [DesignerWatchAction] = Array(repeating: .empty, count: 5)
     @State private var page2Slots: [DesignerWatchAction] = Array(repeating: .empty, count: 5)
     @State private var selectedPage: Int = 0
@@ -3840,6 +3861,56 @@ struct WatchAppSettingsView: View {
                     .onChange(of: quickBookmarkTimeoutSeconds) { _, newValue in
                         AppGroupDefaults.watchQuickBookmarkTimeoutSeconds = newValue
                         model.syncToWatch()
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(.quaternary)
+                    )
+                }
+
+                // MARK: Progress Indicators
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Progress Indicators")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+
+                    VStack(spacing: 12) {
+                        Picker("Linear Bar", selection: $linearBarMode) {
+                            Text("Chapter Progress").tag("chapter")
+                            Text("Total Book Progress").tag("total")
+                        }
+                        .pickerStyle(.menu)
+                        .onChange(of: linearBarMode) { _, _ in
+                            model.syncToWatch()
+                        }
+
+                        Toggle("Show Linear Bar", isOn: Binding(
+                            get: { !linearBarHidden },
+                            set: { linearBarHidden = !$0 }
+                        ))
+                        .onChange(of: linearBarHidden) { _, _ in
+                            model.syncToWatch()
+                        }
+
+                        Divider()
+
+                        Picker("Circular Ring", selection: $circularRingMode) {
+                            Text("Chapter Progress").tag("chapter")
+                            Text("Total Book Progress").tag("total")
+                        }
+                        .pickerStyle(.menu)
+                        .onChange(of: circularRingMode) { _, _ in
+                            model.syncToWatch()
+                        }
+
+                        Toggle("Show Circular Ring", isOn: Binding(
+                            get: { !circularRingHidden },
+                            set: { circularRingHidden = !$0 }
+                        ))
+                        .onChange(of: circularRingHidden) { _, _ in
+                            model.syncToWatch()
+                        }
                     }
                     .padding()
                     .background(

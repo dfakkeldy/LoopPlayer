@@ -23,6 +23,26 @@ enum AppGroupDefaults {
         set { shared.set(max(1, newValue), forKey: "watchQuickBookmarkTimeoutSeconds") }
     }
 
+    static var linearBarMode: String {
+        get { shared.string(forKey: "linearBarMode") ?? "total" }
+        set { shared.set(newValue, forKey: "linearBarMode") }
+    }
+
+    static var linearBarHidden: Bool {
+        get { shared.bool(forKey: "linearBarHidden") }
+        set { shared.set(newValue, forKey: "linearBarHidden") }
+    }
+
+    static var circularRingMode: String {
+        get { shared.string(forKey: "circularRingMode") ?? "chapter" }
+        set { shared.set(newValue, forKey: "circularRingMode") }
+    }
+
+    static var circularRingHidden: Bool {
+        get { shared.bool(forKey: "circularRingHidden") }
+        set { shared.set(newValue, forKey: "circularRingHidden") }
+    }
+
     static func migrateStandardDefaultsIfNeeded() {
         guard let groupedDefaults = UserDefaults(suiteName: suiteName),
               !groupedDefaults.bool(forKey: migrationKey) else {
@@ -39,12 +59,17 @@ enum AppGroupDefaults {
             "bookmarkStorageKey",
             "folderKey",
             "trackId",
+            "totalBookDuration",
             "thumbnailData",
             "watchPage1",
             "watchPage2",
             "crownAction",
             "isHapticFeedbackEnabled",
-            "watchQuickBookmarkTimeoutSeconds"
+            "watchQuickBookmarkTimeoutSeconds",
+            "linearBarMode",
+            "linearBarHidden",
+            "circularRingMode",
+            "circularRingHidden"
         ]
 
         for key in keys {
@@ -154,6 +179,10 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var thumbnailImage: UIImage? = nil
     var progressFraction: Double = 0.0
     var totalProgressFraction: Double = 0.0
+    var totalBookDuration: Double = 0
+    /// When `true`, the linear progress bar should snap to the current value
+    /// instead of animating. Driven by large state jumps (background wake-up).
+    var progressAnimationSuppressed: Bool = true
     var loopMode: String = "off"
     var bookmarkStorageKey: String? = nil
     var folderKey: String? = nil
@@ -170,6 +199,12 @@ class WatchViewModel: NSObject, WCSessionDelegate {
 
     var page1Slots: [WatchAction] = [.empty, .empty, .skipBackward, .playPause, .skipForward]
     var page2Slots: [WatchAction] = [.loopMode, .empty, .speed, .sleepTimer, .bookmark]
+
+    // Progress indicator configuration (synced from iPhone)
+    var linearBarMode: String = "total"
+    var linearBarHidden: Bool = false
+    var circularRingMode: String = "chapter"
+    var circularRingHidden: Bool = false
 
     let availableSpeeds: [Double] = [1.0, 1.25, 1.5, 2.0]
     var currentSpeedIndex: Int = 0
@@ -192,6 +227,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
         isPlaying = defaults.bool(forKey: "isPlaying")
         title = defaults.string(forKey: "title") ?? "No track selected"
         progressFraction = defaults.double(forKey: "progressFraction")
+        totalBookDuration = defaults.double(forKey: "totalBookDuration")
         loopMode = defaults.string(forKey: "loopMode") ?? "off"
         currentTime = defaults.double(forKey: "currentTime")
         if let storedSpeed = defaults.object(forKey: "playbackSpeed") as? Double,
@@ -213,6 +249,11 @@ class WatchViewModel: NSObject, WCSessionDelegate {
         if let raw = defaults.string(forKey: "watchPage2") {
             page2Slots = padded(parseSlots(raw))
         }
+
+        linearBarMode = AppGroupDefaults.linearBarMode
+        linearBarHidden = AppGroupDefaults.linearBarHidden
+        circularRingMode = AppGroupDefaults.circularRingMode
+        circularRingHidden = AppGroupDefaults.circularRingHidden
     }
 
     private func parseSlots(_ raw: String) -> [WatchAction] {
@@ -293,8 +334,26 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 self.defaults.set(progressFraction, forKey: "progressFraction")
             }
             if let totalProgressFraction = state["totalProgressFraction"] as? Double {
+                let delta = abs(totalProgressFraction - self.totalProgressFraction)
+                // Large jumps (>2%) indicate a background wake-up sync —
+                // suppress animation so the bar snaps instead of playing
+                // catch-up through every intermediate value.
+                if delta > 0.02 {
+                    self.progressAnimationSuppressed = true
+                }
                 self.totalProgressFraction = totalProgressFraction
                 self.defaults.set(totalProgressFraction, forKey: "totalProgressFraction")
+                if delta > 0.02 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                        self?.progressAnimationSuppressed = false
+                    }
+                }
+            } else {
+                self.progressAnimationSuppressed = false
+            }
+            if let totalBookDuration = state["totalBookDuration"] as? Double {
+                self.totalBookDuration = totalBookDuration
+                self.defaults.set(totalBookDuration, forKey: "totalBookDuration")
             }
             if let currentTime = state["currentTime"] as? Double {
                 self.currentTime = currentTime
@@ -338,15 +397,31 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 self.page2Slots = self.padded(self.parseSlots(watchPage2))
                 self.defaults.set(watchPage2, forKey: "watchPage2")
             }
+            if let linearBarMode = state["linearBarMode"] as? String {
+                self.linearBarMode = linearBarMode
+                AppGroupDefaults.linearBarMode = linearBarMode
+            }
+            if let linearBarHidden = state["linearBarHidden"] as? Bool {
+                self.linearBarHidden = linearBarHidden
+                AppGroupDefaults.linearBarHidden = linearBarHidden
+            }
+            if let circularRingMode = state["circularRingMode"] as? String {
+                self.circularRingMode = circularRingMode
+                AppGroupDefaults.circularRingMode = circularRingMode
+            }
+            if let circularRingHidden = state["circularRingHidden"] as? Bool {
+                self.circularRingHidden = circularRingHidden
+                AppGroupDefaults.circularRingHidden = circularRingHidden
+            }
             if let thumbnailData = state["thumbnailData"] as? Data {
                 self.defaults.set(thumbnailData, forKey: "thumbnailData")
                 if let image = UIImage(data: thumbnailData) {
                     self.thumbnailImage = image
                 }
             } else if state["trackId"] != nil, self.trackId != previousTrackId {
-                self.defaults.removeObject(forKey: "thumbnailData")
-                self.thumbnailImage = nil
-            } else if let hasThumbnail = state["hasThumbnail"] as? Bool, !hasThumbnail {
+                // Track changed — the old thumbnail is stale. Clear it so the
+                // placeholder shows until the iPhone sends a fresh thumbnail
+                // payload for the new track.
                 self.defaults.removeObject(forKey: "thumbnailData")
                 self.thumbnailImage = nil
             }
@@ -826,7 +901,7 @@ private struct PlayerPage: View {
                         )
                 }
 
-                Text("\(viewModel.title) • \(Int(viewModel.totalProgressFraction * 100))% complete")
+                Text(viewModel.title)
                     .font(.system(.caption, design: .rounded))
                     .fontWeight(.medium)
                     .multilineTextAlignment(.center)
@@ -834,12 +909,18 @@ private struct PlayerPage: View {
                     .truncationMode(.tail)
                     .padding(.horizontal)
                 
-                // Linear total progress bar
-                ProgressView(value: viewModel.totalProgressFraction, total: 1.0)
-                    .progressViewStyle(.linear)
-                    .tint(.green)
-                    .padding(.horizontal, 16)
-                    .scaleEffect(y: 0.5) // Thin bar
+                // Linear progress bar (configurable mode + visibility)
+                if !viewModel.linearBarHidden {
+                    let linearProgress = viewModel.linearBarMode == "chapter"
+                        ? viewModel.progressFraction
+                        : viewModel.totalProgressFraction
+                    ProgressView(value: linearProgress, total: 1.0)
+                        .progressViewStyle(.linear)
+                        .tint(.green)
+                        .padding(.horizontal, 16)
+                        .scaleEffect(y: 0.5) // Thin bar
+                        .animation(viewModel.progressAnimationSuppressed ? nil : .linear(duration: 0.5), value: linearProgress)
+                }
 
                 TransportRow(
                     leftSlot: slots[2],
@@ -1172,15 +1253,20 @@ private struct CenterTransportButton: View {
 
     var body: some View {
         ZStack {
-            Circle()
-                .stroke(Color.white.opacity(0.2), lineWidth: 4)
-                .frame(width: 52, height: 52)
+            if !viewModel.circularRingHidden {
+                let ringProgress = viewModel.circularRingMode == "total"
+                    ? viewModel.totalProgressFraction
+                    : viewModel.progressFraction
+                Circle()
+                    .stroke(Color.white.opacity(0.2), lineWidth: 4)
+                    .frame(width: 52, height: 52)
 
-            Circle()
-                .trim(from: 0, to: viewModel.progressFraction)
-                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .frame(width: 52, height: 52)
-                .rotationEffect(.degrees(-90))
+                Circle()
+                    .trim(from: 0, to: ringProgress)
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .frame(width: 52, height: 52)
+                    .rotationEffect(.degrees(-90))
+            }
 
             Button {
                 if resolvedAction == .bookmark {
