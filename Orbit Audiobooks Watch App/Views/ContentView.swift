@@ -183,6 +183,8 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     /// When `true`, the linear progress bar should snap to the current value
     /// instead of animating. Driven by large state jumps (background wake-up).
     var progressAnimationSuppressed: Bool = true
+    /// Same suppression for the circular ring, keyed off progressFraction jumps.
+    var ringAnimationSuppressed: Bool = true
     var loopMode: String = "off"
     var bookmarkStorageKey: String? = nil
     var folderKey: String? = nil
@@ -330,8 +332,19 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 self.defaults.set(title, forKey: "title")
             }
             if let progressFraction = state["progressFraction"] as? Double {
+                let delta = abs(progressFraction - self.progressFraction)
+                if delta > 0.02 {
+                    self.ringAnimationSuppressed = true
+                }
                 self.progressFraction = progressFraction
                 self.defaults.set(progressFraction, forKey: "progressFraction")
+                if delta > 0.02 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                        self?.ringAnimationSuppressed = false
+                    }
+                }
+            } else {
+                self.ringAnimationSuppressed = false
             }
             if let totalProgressFraction = state["totalProgressFraction"] as? Double {
                 let delta = abs(totalProgressFraction - self.totalProgressFraction)
@@ -1257,6 +1270,10 @@ private struct CenterTransportButton: View {
                 let ringProgress = viewModel.circularRingMode == "total"
                     ? viewModel.totalProgressFraction
                     : viewModel.progressFraction
+                // Use the suppression flag matching whichever progress source the ring tracks.
+                let ringSuppressed = viewModel.circularRingMode == "chapter"
+                    ? viewModel.ringAnimationSuppressed
+                    : viewModel.progressAnimationSuppressed
                 Circle()
                     .stroke(Color.white.opacity(0.2), lineWidth: 4)
                     .frame(width: 52, height: 52)
@@ -1266,6 +1283,7 @@ private struct CenterTransportButton: View {
                     .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                     .frame(width: 52, height: 52)
                     .rotationEffect(.degrees(-90))
+                    .animation(ringSuppressed ? nil : .linear(duration: 0.5), value: ringProgress)
             }
 
             Button {
