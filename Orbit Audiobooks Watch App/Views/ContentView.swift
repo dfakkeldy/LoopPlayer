@@ -18,6 +18,11 @@ enum AppGroupDefaults {
         set { shared.set(newValue, forKey: "isHapticFeedbackEnabled") }
     }
 
+    static var watchQuickBookmarkTimeoutSeconds: Int {
+        get { shared.object(forKey: "watchQuickBookmarkTimeoutSeconds") as? Int ?? 5 }
+        set { shared.set(max(1, newValue), forKey: "watchQuickBookmarkTimeoutSeconds") }
+    }
+
     static func migrateStandardDefaultsIfNeeded() {
         guard let groupedDefaults = UserDefaults(suiteName: suiteName),
               !groupedDefaults.bool(forKey: migrationKey) else {
@@ -38,7 +43,8 @@ enum AppGroupDefaults {
             "watchPage1",
             "watchPage2",
             "crownAction",
-            "isHapticFeedbackEnabled"
+            "isHapticFeedbackEnabled",
+            "watchQuickBookmarkTimeoutSeconds"
         ]
 
         for key in keys {
@@ -159,6 +165,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var sleepTimerMinutes: Int = 0
     var sleepTimerRemainingSeconds: Int = 0
     var isSleepTimerActive: Bool { sleepTimerMode != "off" }
+    var watchQuickBookmarkTimeoutSeconds: Int = AppGroupDefaults.watchQuickBookmarkTimeoutSeconds
 
     var page1Slots: [WatchAction] = [.empty, .empty, .skipBackward, .playPause, .skipForward]
     var page2Slots: [WatchAction] = [.loopMode, .empty, .speed, .sleepTimer, .bookmark]
@@ -266,6 +273,11 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             }
             if let isHapticEnabled = state["isHapticFeedbackEnabled"] as? Bool {
                 AppGroupDefaults.isHapticFeedbackEnabled = isHapticEnabled
+            }
+            if let timeoutSeconds = state["watchQuickBookmarkTimeoutSeconds"] as? Int {
+                let safeTimeout = max(1, timeoutSeconds)
+                self.watchQuickBookmarkTimeoutSeconds = safeTimeout
+                AppGroupDefaults.watchQuickBookmarkTimeoutSeconds = safeTimeout
             }
             if let isPlaying = state["isPlaying"] as? Bool {
                 self.isPlaying = isPlaying
@@ -1216,9 +1228,22 @@ private struct NewBookmarkView: View {
     @State private var recorder = WatchVoiceMemoRecorder()
     @State private var alertMessage = ""
     @State private var isShowingAlert = false
+    @State private var quickBookmarkTimer: Timer?
+    @State private var quickBookmarkStartedAt = Date()
+    @State private var quickBookmarkRemaining: TimeInterval = 0
+    @State private var didCompleteQuickBookmark = false
 
     private var recordingProgress: Double {
         min(recorder.elapsed / WatchVoiceMemoRecorder.maximumDuration, 1)
+    }
+
+    private var quickBookmarkTimeout: TimeInterval {
+        TimeInterval(max(1, viewModel.watchQuickBookmarkTimeoutSeconds))
+    }
+
+    private var quickBookmarkProgress: Double {
+        guard quickBookmarkTimeout > 0 else { return 0 }
+        return min(max(quickBookmarkRemaining / quickBookmarkTimeout, 0), 1)
     }
 
     var body: some View {
@@ -1228,17 +1253,17 @@ private struct NewBookmarkView: View {
                     Circle()
                         .stroke(.secondary.opacity(0.25), lineWidth: 6)
                     Circle()
-                        .trim(from: 0, to: recordingProgress)
-                        .stroke(.red, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                        .trim(from: 0, to: recorder.isRecording ? recordingProgress : quickBookmarkProgress)
+                        .stroke(recorder.isRecording ? .red : Color.accentColor, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                         .rotationEffect(.degrees(-90))
-                    Image(systemName: recorder.isRecording ? "stop.fill" : "mic.fill")
+                    Image(systemName: recorder.isRecording ? "stop.fill" : "bookmark.fill")
                         .font(.title3)
                         .foregroundStyle(recorder.isRecording ? .red : .primary)
                 }
                 .frame(width: 56, height: 56)
                 .accessibilityHidden(true)
 
-                Text(recordingDurationText)
+                Text(recorder.isRecording ? recordingDurationText : quickBookmarkCountdownText)
                     .font(.system(.caption2, design: .monospaced))
                     .foregroundStyle(.secondary)
 
@@ -1247,6 +1272,7 @@ private struct NewBookmarkView: View {
                 // title derived from the current bookmarks count.
                 if !recorder.isRecording {
                     Button {
+                        cancelQuickBookmarkTimer()
                         viewModel.addQuickBookmark()
                         WKInterfaceDevice.current().play(.success)
                         dismiss()
@@ -1274,6 +1300,7 @@ private struct NewBookmarkView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", role: .cancel) {
+                        cancelQuickBookmarkTimer()
                         recorder.discardRecording()
                         dismiss()
                     }
@@ -1289,7 +1316,11 @@ private struct NewBookmarkView: View {
                     saveVoiceMemo()
                 }
             }
+            .onAppear {
+                startQuickBookmarkTimer()
+            }
             .onDisappear {
+                cancelQuickBookmarkTimer()
                 if recorder.isRecording {
                     _ = recorder.stopRecording()
                 }
@@ -1301,7 +1332,43 @@ private struct NewBookmarkView: View {
         "\(Int(recorder.elapsed.rounded(.down)))s / \(Int(WatchVoiceMemoRecorder.maximumDuration))s"
     }
 
+    private var quickBookmarkCountdownText: String {
+        "\(max(0, Int(quickBookmarkRemaining.rounded(.up))))s"
+    }
+
+    private func startQuickBookmarkTimer() {
+        quickBookmarkRemaining = quickBookmarkTimeout
+        quickBookmarkStartedAt = Date()
+        quickBookmarkTimer?.invalidate()
+        quickBookmarkTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { _ in
+            guard !recorder.isRecording, !didCompleteQuickBookmark else { return }
+            let elapsed = Date().timeIntervalSince(quickBookmarkStartedAt)
+            let remaining = max(0, quickBookmarkTimeout - elapsed)
+            quickBookmarkRemaining = remaining
+            if remaining <= 0 {
+                completeQuickBookmarkFromTimeout()
+            }
+        }
+        if let quickBookmarkTimer {
+            RunLoop.main.add(quickBookmarkTimer, forMode: .common)
+        }
+    }
+
+    private func cancelQuickBookmarkTimer() {
+        quickBookmarkTimer?.invalidate()
+        quickBookmarkTimer = nil
+    }
+
+    private func completeQuickBookmarkFromTimeout() {
+        guard !didCompleteQuickBookmark else { return }
+        didCompleteQuickBookmark = true
+        cancelQuickBookmarkTimer()
+        viewModel.addQuickBookmark()
+        dismiss()
+    }
+
     private func startVoiceBookmark() {
+        cancelQuickBookmarkTimer()
         switch AVAudioApplication.shared.recordPermission {
         case .granted:
             beginRecording()
@@ -1332,6 +1399,7 @@ private struct NewBookmarkView: View {
     }
 
     private func saveVoiceMemo() {
+        cancelQuickBookmarkTimer()
         guard let fileURL = recorder.stopRecording() else {
             showAlert("No recording was captured.")
             return

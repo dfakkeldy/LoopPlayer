@@ -203,7 +203,8 @@ final class PlayerModel: NSObject, WCSessionDelegate {
             "rewindAmountAfterMinutes": 30,
             "rewindPauseHoursThreshold": 1,
             "rewindAmountAfterHours": 90,
-            "rewindHoursToChapterStart": false
+            "rewindHoursToChapterStart": false,
+            "watchQuickBookmarkTimeoutSeconds": 5
         ])
         setupWatchConnectivity()
     }
@@ -387,6 +388,7 @@ final class PlayerModel: NSObject, WCSessionDelegate {
         let crownAction = UserDefaults.standard.string(forKey: "crownAction") ?? "volume"
         context["crownAction"] = crownAction
         context["isHapticFeedbackEnabled"] = AppGroupDefaults.isHapticFeedbackEnabled
+        context["watchQuickBookmarkTimeoutSeconds"] = AppGroupDefaults.watchQuickBookmarkTimeoutSeconds
         context["loopMode"] = loopMode.rawValue
         context["playbackSpeed"] = Double(speed)
         
@@ -3727,6 +3729,7 @@ struct WatchAppSettingsView: View {
     @AppStorage("crownScrubSensitivity") private var scrubSensitivity: Double = 0.5
     @AppStorage("watchPage1") private var page1Raw: String = "empty,empty,skipBackward,playPause,skipForward"
     @AppStorage("watchPage2") private var page2Raw: String = "loopMode,empty,speed,sleepTimer,bookmark"
+    @AppStorage("watchQuickBookmarkTimeoutSeconds", store: AppGroupDefaults.shared) private var quickBookmarkTimeoutSeconds: Int = 5
 
     @State private var page1Slots: [DesignerWatchAction] = Array(repeating: .empty, count: 5)
     @State private var page2Slots: [DesignerWatchAction] = Array(repeating: .empty, count: 5)
@@ -3809,6 +3812,32 @@ struct WatchAppSettingsView: View {
                             model.syncToWatch()
                         }
                     ))
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(.quaternary)
+                    )
+                }
+
+                // MARK: Bookmark Timeout
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Bookmark Timeout")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+
+                    Stepper(value: $quickBookmarkTimeoutSeconds, in: 1...15) {
+                        HStack {
+                            Label("Quick Bookmark", systemImage: "timer")
+                            Spacer()
+                            Text("\(quickBookmarkTimeoutSeconds)s")
+                                .font(.body.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: quickBookmarkTimeoutSeconds) { _, newValue in
+                        AppGroupDefaults.watchQuickBookmarkTimeoutSeconds = newValue
+                        model.syncToWatch()
+                    }
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
