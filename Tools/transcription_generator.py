@@ -8,6 +8,13 @@ the Orbit Audiobooks iOS and macOS apps:
 Prerequisites:
   pip install -r Tools/requirements.txt
   brew install ffmpeg
+
+Usage:
+  # Single file
+  python Tools/transcription_generator.py --audio_path track.mp3
+
+  # Entire directory (skips files that already have a .transcript.json)
+  python Tools/transcription_generator.py --dir "path/to/audiobook/"
 """
 
 import argparse
@@ -15,8 +22,9 @@ import json
 import os
 import shutil
 import sys
-import uuid
 from pathlib import Path
+
+AUDIO_EXTENSIONS = {".mp3", ".m4b", ".m4a", ".wav", ".flac"}
 
 
 def check_ffmpeg() -> None:
@@ -28,24 +36,70 @@ def check_ffmpeg() -> None:
         sys.exit(2)
 
 
-def resolve_output_path(audio_path: str, output_path: str | None) -> str:
-    if output_path:
-        return output_path
-    p = Path(audio_path)
-    return str(p.parent / f"{p.stem}.transcript.json")
+def find_audio_files(directory: str, skip_existing: bool) -> list[Path]:
+    dir_path = Path(directory)
+    if not dir_path.is_dir():
+        print(f"Error: not a directory: {directory}", file=sys.stderr)
+        sys.exit(1)
+
+    files: list[Path] = []
+    for entry in sorted(dir_path.iterdir()):
+        if entry.suffix.lower() not in AUDIO_EXTENSIONS:
+            continue
+        if entry.name.startswith("."):
+            continue
+        sidecar = entry.parent / f"{entry.stem}.transcript.json"
+        if skip_existing and sidecar.exists():
+            continue
+        files.append(entry)
+    return files
+
+
+def transcribe_file(
+    audio_path: str,
+    output_path: str,
+    model: "WhisperModel",
+    language: str,
+) -> None:
+    print(f"Transcribing: {audio_path}")
+    segments, info = model.transcribe(
+        audio_path,
+        language=language,
+        beam_size=5,
+    )
+
+    results: list[dict] = []
+    for segment in segments:
+        text = segment.text.strip()
+        if not text:
+            continue
+        results.append({
+            "text": text,
+            "startTime": round(segment.start, 3),
+            "endTime": round(segment.end, 3),
+        })
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+
+    print(f"  -> {len(results)} segments to: {output_path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Transcribe audio to a .transcript.json sidecar for Orbit Audiobooks."
+        description="Transcribe audio to .transcript.json sidecars for Orbit Audiobooks."
     )
-    parser.add_argument(
-        "--audio_path", required=True, help="Path to the audio file (.mp3, .m4b, .m4a, etc.)"
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument(
+        "--audio_path", help="Path to a single audio file."
+    )
+    mode.add_argument(
+        "--dir", help="Directory of audio files to transcribe (recursively skipped for now)."
     )
     parser.add_argument(
         "--output_path",
         default=None,
-        help="Output JSON path. Defaults to <audio_stem>.transcript.json alongside the input.",
+        help="Output JSON path (single file mode only).",
     )
     parser.add_argument(
         "--model_size",
@@ -58,41 +112,40 @@ def main() -> None:
         default="en",
         help="Language code for transcription (default: en)",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-transcribe files that already have a .transcript.json sidecar.",
+    )
     args = parser.parse_args()
-
-    if not os.path.isfile(args.audio_path):
-        print(f"Error: audio file not found: {args.audio_path}", file=sys.stderr)
-        sys.exit(1)
 
     check_ffmpeg()
 
-    output_path = resolve_output_path(args.audio_path, args.output_path)
-
     from faster_whisper import WhisperModel
 
-    print(f"Loading Whisper model '{args.model_size}'... (first run downloads ~150MB to cache)")
+    print(f"Loading Whisper model '{args.model_size}'... (first run downloads to cache)")
     model = WhisperModel(args.model_size, device="cpu", compute_type="int8")
 
-    print(f"Transcribing: {args.audio_path}")
-    segments, info = model.transcribe(
-        args.audio_path,
-        language=args.language,
-        beam_size=5,
-    )
-    print(f"Detected language: {info.language} (probability: {info.language_probability:.2f})")
-
-    results: list[dict] = []
-    for segment in segments:
-        results.append({
-            "text": segment.text.strip(),
-            "startTime": round(segment.start, 3),
-            "endTime": round(segment.end, 3),
-        })
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
-
-    print(f"Wrote {len(results)} segments to: {output_path}")
+    if args.audio_path:
+        if not os.path.isfile(args.audio_path):
+            print(f"Error: file not found: {args.audio_path}", file=sys.stderr)
+            sys.exit(1)
+        output = args.output_path or str(
+            Path(args.audio_path).parent / f"{Path(args.audio_path).stem}.transcript.json"
+        )
+        transcribe_file(args.audio_path, output, model, args.language)
+    else:
+        files = find_audio_files(args.dir, skip_existing=not args.force)
+        if not files:
+            print("No audio files to transcribe (all have sidecars, or directory is empty).")
+            sys.exit(0)
+        print(f"Found {len(files)} file(s) to transcribe.\n")
+        for i, file_path in enumerate(files, 1):
+            output = str(file_path.parent / f"{file_path.stem}.transcript.json")
+            print(f"[{i}/{len(files)}]", end=" ")
+            transcribe_file(str(file_path), output, model, args.language)
+            print()
+        print(f"Done — {len(files)} file(s) transcribed.")
 
 
 if __name__ == "__main__":
