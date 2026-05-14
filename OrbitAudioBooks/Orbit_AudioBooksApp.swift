@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct Orbit_AudioBooksApp: App {
+    @StateObject private var settings = SettingsManager()
+
     init() {
         #if DEBUG && targetEnvironment(simulator)
         MockMediaProvider.seedSampleAudiobookIfNeeded()
@@ -18,6 +20,7 @@ struct Orbit_AudioBooksApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(settings)
                 .onOpenURL { url in
                     handleDeepLink(url)
                 }
