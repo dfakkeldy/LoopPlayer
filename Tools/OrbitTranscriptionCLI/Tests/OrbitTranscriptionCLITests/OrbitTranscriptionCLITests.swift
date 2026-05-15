@@ -22,3 +22,24 @@ import Testing
     let keys = Set(json[0].keys)
     #expect(keys == ["endTime", "startTime", "text"])
 }
+
+@Test func cliEventEncodingProducesLineDecodableJSON() throws {
+    let event = TranscriptionCLIEvent.segment(
+        TranscriptionSegment(text: "A live segment.", startTime: 1.25, endTime: 3.5)
+    )
+
+    let line = try event.jsonLine()
+    #expect(line.last == "\n")
+
+    let decoded = try JSONDecoder().decode(TranscriptionCLIEvent.self, from: Data(line.utf8))
+    #expect(decoded == event)
+}
+
+@Test func cliCompletedEventCarriesOutputPath() throws {
+    let event = TranscriptionCLIEvent.completed(outputPath: "/tmp/book.transcript.json", segmentCount: 12)
+
+    let data = try JSONEncoder().encode(event)
+    let decoded = try JSONDecoder().decode(TranscriptionCLIEvent.self, from: data)
+
+    #expect(decoded == event)
+}

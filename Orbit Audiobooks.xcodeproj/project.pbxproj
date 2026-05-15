@@ -558,6 +558,7 @@
 			inputPaths = (
 				"$(SRCROOT)/Tools/OrbitTranscriptionCLI/Package.swift",
 				"$(SRCROOT)/Tools/OrbitTranscriptionCLI/Sources/OrbitTranscriptionCLI/OrbitTranscriptionCLI.swift",
+				"$(SRCROOT)/Tools/OrbitTranscriptionCLI/Sources/OrbitTranscriptionCLI/TranscriptionCLIEvent.swift",
 			);
 			name = "Build and Copy OrbitTranscriptionCLI";
 			outputFileListPaths = (

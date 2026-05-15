@@ -32,6 +32,15 @@ struct OrbitTranscriptionCLI: AsyncParsableCommand {
     var language: String?
 
     mutating func run() async throws {
+        do {
+            try await runTranscription()
+        } catch {
+            try? TranscriptionCLIEvent.error(message: error.localizedDescription).emit()
+            throw error
+        }
+    }
+
+    private func runTranscription() async throws {
         let audioURL = URL(fileURLWithPath: audioPath)
         let outputURL: URL
         if let outputPath {
@@ -47,12 +56,14 @@ struct OrbitTranscriptionCLI: AsyncParsableCommand {
             throw ValidationError("Audio file not found: \(audioPath)")
         }
 
-        print("Loading WhisperKit with model '\(modelSize)'...")
-        print("(First run downloads ~500 MB from HuggingFace — this may take a few minutes.)")
+        try TranscriptionCLIEvent.status(message: "Loading WhisperKit model '\(modelSize)'...").emit()
+        try TranscriptionCLIEvent.progress(0.05).emit()
 
         let whisperKit = try await WhisperKit(model: modelSize)
 
-        print("Transcribing: \(audioPath)")
+        try TranscriptionCLIEvent.status(message: "Transcribing \(audioURL.lastPathComponent)...").emit()
+        try TranscriptionCLIEvent.progress(0.15).emit()
+
         let options = DecodingOptions(
             task: .transcribe,
             language: language ?? "en",
@@ -62,39 +73,52 @@ struct OrbitTranscriptionCLI: AsyncParsableCommand {
             chunkingStrategy: .vad
         )
 
+        try TranscriptionCLIEvent.status(message: "Running local speech recognition...").emit()
         let results: [TranscriptionResult] = try await whisperKit.transcribe(
             audioPath: audioPath,
             decodeOptions: options
         )
 
         var segments: [TranscriptionSegment] = []
+        let totalSegmentCount = max(1, results.reduce(0) { $0 + $1.segments.count })
+        var emittedSegmentCount = 0
+
         for result in results {
             for segment in result.segments {
                 let text = segment.text
                     .replacing(/<\|[^|]*\|>/, with: "")
                     .trimmingCharacters(in: .whitespaces)
                 guard !text.isEmpty else { continue }
-                segments.append(TranscriptionSegment(
+
+                let transcriptionSegment = TranscriptionSegment(
                     text: text,
                     startTime: (TimeInterval(segment.start) * 1000).rounded() / 1000,
                     endTime: (TimeInterval(segment.end) * 1000).rounded() / 1000
-                ))
+                )
+                segments.append(transcriptionSegment)
+                emittedSegmentCount += 1
+
+                try TranscriptionCLIEvent.segment(transcriptionSegment).emit()
+                let fractional = Double(emittedSegmentCount) / Double(totalSegmentCount)
+                try TranscriptionCLIEvent.progress(0.15 + (0.8 * fractional)).emit()
             }
         }
 
+        try TranscriptionCLIEvent.status(message: "Writing transcript JSON...").emit()
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(segments)
         try data.write(to: outputURL)
 
-        print("Wrote \(segments.count) segments to: \(outputURL.path)")
+        try TranscriptionCLIEvent.progress(1.0).emit()
+        try TranscriptionCLIEvent.completed(outputPath: outputURL.path, segmentCount: segments.count).emit()
     }
 }
 
 /// Mirrors the Codable schema of the iOS app's TranscriptionSegment.
 /// Only stored properties are encoded — computed properties (like `id`
 /// in the iOS app) are not part of the JSON wire format.
-struct TranscriptionSegment: Codable {
+struct TranscriptionSegment: Codable, Equatable {
     let text: String
     let startTime: TimeInterval
     let endTime: TimeInterval

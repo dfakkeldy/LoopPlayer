@@ -5,7 +5,7 @@ import CryptoKit
 struct TranscriptPane: View {
     @EnvironmentObject var transcriptStore: TranscriptStore
     @EnvironmentObject var player: MacPlayerModel
-    @ObservedObject var transcriptionManager: TranscriptionManager
+    @EnvironmentObject var transcriptionManager: TranscriptionManager
     @Binding var searchText: String
 
     var currentHash: String {
@@ -45,11 +45,12 @@ struct TranscriptPane: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 1) {
-                    ForEach(Array(transcriptionManager.liveLogStream.enumerated()), id: \.offset) { _, line in
-                        Text(line)
+                    ForEach(transcriptionManager.liveLogStream) { entry in
+                        Text(formattedLogLine(entry))
                             .font(.caption.monospaced())
-                            .foregroundStyle(line.hasPrefix("[error]") ? Color.red : Color.green)
+                            .foregroundStyle(logColor(entry.kind))
                             .textSelection(.enabled)
+                            .id(entry.id)
                     }
                 }
                 .padding(8)
@@ -62,7 +63,7 @@ struct TranscriptPane: View {
                     Button {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(
-                            transcriptionManager.liveLogStream.joined(separator: "\n"),
+                            transcriptionManager.liveLogStream.map(formattedLogLine).joined(separator: "\n"),
                             forType: .string
                         )
                     } label: {
@@ -75,9 +76,9 @@ struct TranscriptPane: View {
                 }
             }
             .onChange(of: transcriptionManager.liveLogStream.count) { _, _ in
-                if let last = transcriptionManager.liveLogStream.indices.last {
+                if let last = transcriptionManager.liveLogStream.last {
                     withAnimation {
-                        proxy.scrollTo(last, anchor: .bottom)
+                        proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
             }
@@ -116,6 +117,42 @@ struct TranscriptPane: View {
             }
         }
         .padding()
+    }
+
+    private func formattedLogLine(_ entry: TranscriptionLogEntry) -> String {
+        switch entry.kind {
+        case .status:
+            return "[status] \(entry.message)"
+        case .progress:
+            return "[progress] \(entry.message)"
+        case .segment:
+            return "[segment] \(entry.message)"
+        case .completed:
+            return "[done] \(entry.message)"
+        case .error:
+            return "[error] \(entry.message)"
+        case .debug:
+            return "[debug] \(entry.message)"
+        case .stderr:
+            return "[stderr] \(entry.message)"
+        }
+    }
+
+    private func logColor(_ kind: TranscriptionLogEntry.Kind) -> Color {
+        switch kind {
+        case .error, .stderr:
+            return .red
+        case .completed:
+            return .mint
+        case .segment:
+            return .white
+        case .progress:
+            return .cyan
+        case .debug:
+            return .secondary
+        case .status:
+            return .green
+        }
     }
 }
 

@@ -32,7 +32,7 @@ struct MacContentView: View {
                     PlayerPane()
                 }
 
-                TranscriptPane(transcriptionManager: transcriptionManager, searchText: $searchText)
+                TranscriptPane(searchText: $searchText)
                     .frame(width: 300)
             }
         }

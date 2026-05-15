@@ -10,14 +10,101 @@ struct TranscriptionSegment: Codable {
     let endTime: TimeInterval
 }
 
+struct TranscriptionLogEntry: Identifiable, Equatable {
+    enum Kind: String {
+        case status
+        case progress
+        case segment
+        case completed
+        case error
+        case debug
+        case stderr
+    }
+
+    let id = UUID()
+    let kind: Kind
+    let message: String
+}
+
+private enum TranscriptionCLIEvent: Codable {
+    case status(message: String)
+    case progress(Double)
+    case segment(TranscriptionSegment)
+    case completed(outputPath: String, segmentCount: Int)
+    case error(message: String)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case message
+        case progress
+        case segment
+        case outputPath
+        case segmentCount
+    }
+
+    private enum EventType: String, Codable {
+        case status
+        case progress
+        case segment
+        case completed
+        case error
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(EventType.self, forKey: .type)
+
+        switch type {
+        case .status:
+            self = .status(message: try container.decode(String.self, forKey: .message))
+        case .progress:
+            self = .progress(try container.decode(Double.self, forKey: .progress))
+        case .segment:
+            self = .segment(try container.decode(TranscriptionSegment.self, forKey: .segment))
+        case .completed:
+            self = .completed(
+                outputPath: try container.decode(String.self, forKey: .outputPath),
+                segmentCount: try container.decode(Int.self, forKey: .segmentCount)
+            )
+        case .error:
+            self = .error(message: try container.decode(String.self, forKey: .message))
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .status(let message):
+            try container.encode(EventType.status, forKey: .type)
+            try container.encode(message, forKey: .message)
+        case .progress(let progress):
+            try container.encode(EventType.progress, forKey: .type)
+            try container.encode(progress, forKey: .progress)
+        case .segment(let segment):
+            try container.encode(EventType.segment, forKey: .type)
+            try container.encode(segment, forKey: .segment)
+        case .completed(let outputPath, let segmentCount):
+            try container.encode(EventType.completed, forKey: .type)
+            try container.encode(outputPath, forKey: .outputPath)
+            try container.encode(segmentCount, forKey: .segmentCount)
+        case .error(let message):
+            try container.encode(EventType.error, forKey: .type)
+            try container.encode(message, forKey: .message)
+        }
+    }
+}
+
 @MainActor
 class TranscriptionManager: ObservableObject {
     @Published var progress: Double = 0
     @Published var isTranscribing: Bool = false
     @Published var status: String = ""
-    @Published var liveLogStream: [String] = []
+    @Published var liveLogStream: [TranscriptionLogEntry] = []
+    @Published var liveSegments: [TranscriptionSegment] = []
 
     private var currentProcess: Process?
+    private var completedTranscriptURL: URL?
 
     func exportTranscript(for audioURL: URL, segments: [TranscriptionSegment]) throws {
         let savePanel = NSSavePanel()
@@ -36,7 +123,7 @@ class TranscriptionManager: ObservableObject {
         currentProcess?.terminate()
         currentProcess = nil
         isTranscribing = false
-        liveLogStream.append("[info] Transcription cancelled.")
+        appendLog(.status, "Transcription cancelled.")
     }
 
     func transcribe(url: URL) async throws -> URL? {
@@ -44,14 +131,16 @@ class TranscriptionManager: ObservableObject {
         progress = 0
         status = "Starting CLI..."
         liveLogStream = []
+        liveSegments = []
+        completedTranscriptURL = nil
         defer {
             isTranscribing = false
             currentProcess = nil
         }
 
         guard let cliURL = resolveCLIBinary() else {
-            liveLogStream.append("[error] OrbitTranscriptionCLI binary not found.")
-            liveLogStream.append("[info] Build it with: cd Tools/OrbitTranscriptionCLI && swift build")
+            appendLog(.error, "OrbitTranscriptionCLI binary not found.")
+            appendLog(.status, "Build it with: cd Tools/OrbitTranscriptionCLI && swift build")
             return nil
         }
 
@@ -68,12 +157,12 @@ class TranscriptionManager: ObservableObject {
         let didStart = url.startAccessingSecurityScopedResource()
         defer { if didStart { url.stopAccessingSecurityScopedResource() } }
 
-        liveLogStream.append("Launching CLI: \(cliURL.lastPathComponent)")
-        liveLogStream.append("Audio: \(url.lastPathComponent)")
+        appendLog(.status, "Launching CLI: \(cliURL.lastPathComponent)")
+        appendLog(.status, "Audio: \(url.lastPathComponent)")
 
         let process = Process()
         process.executableURL = cliURL
-        process.arguments = [url.path, "--outputPath", transcriptURL.path]
+        process.arguments = [url.path, "--output-path", transcriptURL.path]
         currentProcess = process
 
         let stdoutPipe = Pipe()
@@ -84,7 +173,7 @@ class TranscriptionManager: ObservableObject {
         do {
             try process.run()
         } catch {
-            liveLogStream.append("[error] Failed to launch CLI: \(error.localizedDescription)")
+            appendLog(.error, "Failed to launch CLI: \(error.localizedDescription)")
             return nil
         }
 
@@ -98,8 +187,7 @@ class TranscriptionManager: ObservableObject {
                 do {
                     for try await line in stdoutPipe.fileHandleForReading.bytes.lines {
                         await MainActor.run {
-                            self.liveLogStream.append(line)
-                            self.status = line
+                            self.handleCLIOutputLine(line)
                         }
                     }
                 } catch {
@@ -110,7 +198,7 @@ class TranscriptionManager: ObservableObject {
                 do {
                     for try await line in stderrPipe.fileHandleForReading.bytes.lines {
                         await MainActor.run {
-                            self.liveLogStream.append("[stderr] \(line)")
+                            self.appendLog(.stderr, line)
                         }
                     }
                 } catch {
@@ -122,12 +210,12 @@ class TranscriptionManager: ObservableObject {
         process.waitUntilExit()
 
         if process.terminationStatus == 0 {
-            liveLogStream.append("── Transcription complete ──")
             progress = 1.0
+            appendLog(.completed, "Transcription complete.")
             NotificationCenter.default.post(name: NSNotification.Name("TranscriptDidUpdate"), object: nil)
-            return transcriptURL
+            return completedTranscriptURL ?? transcriptURL
         } else {
-            liveLogStream.append("[error] CLI exited with code \(process.terminationStatus)")
+            appendLog(.error, "CLI exited with code \(process.terminationStatus)")
             return nil
         }
     }
@@ -191,6 +279,50 @@ class TranscriptionManager: ObservableObject {
     }
 
     private func log(_ message: String) {
-        liveLogStream.append("[debug] \(message)")
+        appendLog(.debug, message)
+    }
+
+    private func handleCLIOutputLine(_ line: String) {
+        guard let data = line.data(using: .utf8),
+              let event = try? JSONDecoder().decode(TranscriptionCLIEvent.self, from: data)
+        else {
+            appendLog(.status, line)
+            status = line
+            return
+        }
+
+        switch event {
+        case .status(let message):
+            status = message
+            appendLog(.status, message)
+        case .progress(let value):
+            progress = min(1, max(0, value))
+            appendLog(.progress, "\(Int(progress * 100))%")
+        case .segment(let segment):
+            liveSegments.append(segment)
+            appendLog(.segment, "\(formatTimestamp(segment.startTime)) \(segment.text)")
+        case .completed(let outputPath, let segmentCount):
+            completedTranscriptURL = URL(fileURLWithPath: outputPath)
+            status = "Wrote \(segmentCount) segments"
+            progress = 1.0
+            appendLog(.completed, "Wrote \(segmentCount) segments to \(URL(fileURLWithPath: outputPath).lastPathComponent)")
+        case .error(let message):
+            status = "Transcription failed"
+            appendLog(.error, message)
+        }
+    }
+
+    private func appendLog(_ kind: TranscriptionLogEntry.Kind, _ message: String) {
+        liveLogStream.append(TranscriptionLogEntry(kind: kind, message: message))
+    }
+
+    private func formatTimestamp(_ seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds.rounded(.down)))
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        return h > 0
+            ? String(format: "%d:%02d:%02d", h, m, s)
+            : String(format: "%d:%02d", m, s)
     }
 }
