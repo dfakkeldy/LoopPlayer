@@ -27,20 +27,16 @@ struct ContentView: View {
             ZStack {
             // MARK: Primary player UI (single block — gets the gray-out treatment)
             VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .center, spacing: 12) {
-                ArtworkTranscriptOverlayView(model: model)
-
-                VStack(alignment: .center, spacing: 6) {
-                    Text(model.chapters.count >= 2 ? "Current Chapter" : "Current Title")
-                        .customFont(.caption, appFont: settings.appFont)
-                        .foregroundStyle(.secondary)
-                    Text(model.chapters.count >= 2 ? (model.currentSubtitle.isEmpty ? "Chapter \(model.currentChapterIndex ?? 0 + 1)" : model.currentSubtitle) : model.currentTitle)
-                        .customFont(.title2, weight: .semibold, appFont: settings.appFont)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.8)
-                }
-                .frame(maxWidth: .infinity)
+            ArtworkTranscriptOverlayView(model: model) {
+                AlbumArtHeroView(
+                    artwork: model.currentDisplayArtwork ?? model.thumbnailImage,
+                    artworkVersion: model.currentDisplayArtworkVersion,
+                    caption: model.chapters.count >= 2 ? "Current Chapter" : "Current Title",
+                    mainText: model.chapters.count >= 2
+                        ? (model.currentSubtitle.isEmpty ? "Chapter \((model.currentChapterIndex ?? 0) + 1)" : model.currentSubtitle)
+                        : model.currentTitle,
+                    appFont: settings.appFont
+                )
             }
 
             Spacer()
