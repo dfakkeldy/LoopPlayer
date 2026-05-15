@@ -297,7 +297,9 @@ final class MacPlayerModel: ObservableObject {
                 let data = try encoder.encode(bookmarks)
                 try data.write(to: sidecar, options: .atomic)
             } catch {
+#if DEBUG
                 print("Bookmark sidecar write failed at \(sidecar.path): \(error)")
+#endif
             }
         }
 

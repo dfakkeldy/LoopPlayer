@@ -115,7 +115,9 @@ class TranscriptionManager: ObservableObject {
         if savePanel.runModal() == .OK, let url = savePanel.url {
             let data = try JSONEncoder().encode(segments)
             try data.write(to: url, options: .atomic)
+#if DEBUG
             print("Successfully exported transcript to: \(url.path)")
+#endif
         }
     }
 
@@ -179,9 +181,8 @@ class TranscriptionManager: ObservableObject {
 
         status = "Transcribing..."
 
-        // Read stdout and stderr concurrently via AsyncSequence.
-        // Both loops exit when the pipe's write end closes (process exits),
-        // so the task group naturally waits for process completion.
+        // Read stdout and stderr concurrently via AsyncSequence, and wait for
+        // process exit off the main actor to avoid blocking the UI.
         await withTaskGroup(of: Void.self) { group in
             group.addTask {
                 do {
@@ -205,9 +206,10 @@ class TranscriptionManager: ObservableObject {
                     // Pipe closed or read error — expected when process exits.
                 }
             }
+            group.addTask {
+                process.waitUntilExit()
+            }
         }
-
-        process.waitUntilExit()
 
         if process.terminationStatus == 0 {
             progress = 1.0

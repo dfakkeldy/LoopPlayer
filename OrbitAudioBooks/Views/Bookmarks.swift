@@ -149,7 +149,9 @@ struct Bookmark: Identifiable, Codable, Equatable, Hashable {
     }
 
     static func legacyVoiceMemoDirectory() -> URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return FileManager.default.temporaryDirectory.appendingPathComponent("VoiceMemos", isDirectory: true)
+        }
         let dir = docs.appendingPathComponent("VoiceMemos", isDirectory: true)
         if !FileManager.default.fileExists(atPath: dir.path) {
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -184,7 +186,9 @@ struct Bookmark: Identifiable, Codable, Equatable, Hashable {
     }
 
     static func legacyBookmarkImageDirectory() -> URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return FileManager.default.temporaryDirectory.appendingPathComponent("BookmarkImages", isDirectory: true)
+        }
         let dir = docs.appendingPathComponent("BookmarkImages", isDirectory: true)
         if !FileManager.default.fileExists(atPath: dir.path) {
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

@@ -66,7 +66,7 @@ struct BottomToolbarView: View {
 
     private var speedButton: some View {
         Button {
-            let speeds: [Float] = [1.0, 1.25, 1.5, 2.0, 10.0]
+            let speeds: [Float] = [1.0, 1.25, 1.5, 2.0, 3.0]
             if let index = speeds.firstIndex(of: model.speed) {
                 let nextIndex = (index + 1) % speeds.count
                 model.setSpeed(speeds[nextIndex])

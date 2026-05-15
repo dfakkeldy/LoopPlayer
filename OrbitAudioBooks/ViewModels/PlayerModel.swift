@@ -226,6 +226,9 @@ final class PlayerModel {
     /// UserDefaults-backed persistence helper for book progress, bookmarks, speed, and ordering.
     private let persistence = Persistence()
 
+    /// Tokens returned by `MPRemoteCommand.addTarget(handler:)`. Must be retained
+    /// per Apple documentation, otherwise handlers may be deallocated.
+    @ObservationIgnored private var remoteCommandTokens: [Any] = []
     /// A hidden `MPVolumeView` used to programmatically set system volume.
     @ObservationIgnored private var _volumeView: MPVolumeView?
 
@@ -1079,7 +1082,7 @@ final class PlayerModel {
             return false
         }
 
-        let target = max(0, current - 30 * Double(speed))
+        let target = max(0, current - 30)
         isManualSeeking = true
         audioEngine.player?.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             DispatchQueue.main.async {
@@ -1113,7 +1116,7 @@ final class PlayerModel {
         }
 
         let duration = durationSeconds ?? 0
-        let target = min(duration, current + 30 * Double(speed))
+        let target = min(duration, current + 30)
         isManualSeeking = true
         audioEngine.player?.seek(to: CMTime(seconds: target, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
             DispatchQueue.main.async {
@@ -1541,26 +1544,28 @@ final class PlayerModel {
         // Some UIs also show "Change Playback Position" — disable for a simpler Watch UI.
         center.changePlaybackPositionCommand.isEnabled = false
 
-        center.playCommand.addTarget { [weak self] _ in
-            DispatchQueue.main.async { self?.play() }
-            return .success
-        }
-        center.pauseCommand.addTarget { [weak self] _ in
-            DispatchQueue.main.async { self?.pause() }
-            return .success
-        }
-        center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            DispatchQueue.main.async { self?.togglePlayPause() }
-            return .success
-        }
-        center.nextTrackCommand.addTarget { [weak self] _ in
-            DispatchQueue.main.async { self?.skipForwardNavigation() }
-            return .success
-        }
-        center.skipBackwardCommand.addTarget { [weak self] _ in
-            DispatchQueue.main.async { self?.skipBackward30() }
-            return .success
-        }
+        remoteCommandTokens = [
+            center.playCommand.addTarget { [weak self] _ in
+                DispatchQueue.main.async { self?.play() }
+                return .success
+            },
+            center.pauseCommand.addTarget { [weak self] _ in
+                DispatchQueue.main.async { self?.pause() }
+                return .success
+            },
+            center.togglePlayPauseCommand.addTarget { [weak self] _ in
+                DispatchQueue.main.async { self?.togglePlayPause() }
+                return .success
+            },
+            center.nextTrackCommand.addTarget { [weak self] _ in
+                DispatchQueue.main.async { self?.skipForwardNavigation() }
+                return .success
+            },
+            center.skipBackwardCommand.addTarget { [weak self] _ in
+                DispatchQueue.main.async { self?.skipBackward30() }
+                return .success
+            }
+        ]
     }
 
     private func updateNowPlayingElapsedTime() {
@@ -2728,14 +2733,14 @@ private struct Persistence {
     }
     
     func saveSpeed(for title: String, speed: Float) {
-        var dict = defaults.dictionary(forKey: speedKey) as? [String: Float] ?? [:]
-        dict[title] = speed
+        var dict = defaults.dictionary(forKey: speedKey) as? [String: Double] ?? [:]
+        dict[title] = Double(speed)
         defaults.set(dict, forKey: speedKey)
     }
-    
+
     func getSpeed(for title: String) -> Float? {
-        let dict = defaults.dictionary(forKey: speedKey) as? [String: Float] ?? [:]
-        return dict[title]
+        let dict = defaults.dictionary(forKey: speedKey) as? [String: Double] ?? [:]
+        return dict[title].map { Float($0) }
     }
     
     func saveLoopMode(for key: String, loopMode: String) {
@@ -2872,7 +2877,9 @@ private struct Persistence {
         do {
             try data.write(to: sidecar, options: .atomic)
         } catch {
+#if DEBUG
             print("Bookmark sidecar write failed at \(sidecar.path): \(error)")
+#endif
         }
     }
 
