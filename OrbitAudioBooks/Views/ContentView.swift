@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var showingSettings = false
     @State private var newBookmarkDraft: BookmarkDraft? = nil
     @State private var editingBookmarkID: UUID? = nil
+    @State private var isTranscriptExpanded = false
     @Environment(\.displayScale) private var displayScale
 
     init(pendingDeepLink: Binding<PlayerDeepLink?> = .constant(nil)) {
@@ -27,7 +28,7 @@ struct ContentView: View {
             ZStack {
             // MARK: Primary player UI (single block — gets the gray-out treatment)
             VStack(alignment: .leading, spacing: 16) {
-            ArtworkTranscriptOverlayView(model: model) {
+            TranscriptOverlayView(isExpanded: $isTranscriptExpanded) {
                 AlbumArtHeroView(
                     artwork: model.currentDisplayArtwork ?? model.thumbnailImage,
                     artworkVersion: model.currentDisplayArtworkVersion,
@@ -76,6 +77,7 @@ struct ContentView: View {
                 onCreateBookmark: { draft in newBookmarkDraft = draft }
             )
         }
+        .environment(model)
         .environment(\.font, settings.appFont == SettingsManager.systemFontName ? .body : .custom(settings.appFont, size: 17, relativeTo: .body))
         .padding(.horizontal)
         .padding(.top)
