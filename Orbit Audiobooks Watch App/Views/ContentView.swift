@@ -54,6 +54,11 @@ enum AppGroupDefaults {
         set { shared.set(newValue, forKey: "watchArtworkLayout") }
     }
 
+    static var watchBackgroundStyle: String {
+        get { shared.string(forKey: "watchBackgroundStyle") ?? "artwork" }
+        set { shared.set(newValue, forKey: "watchBackgroundStyle") }
+    }
+
     static func migrateStandardDefaultsIfNeeded() {
         guard let groupedDefaults = UserDefaults(suiteName: suiteName),
               !groupedDefaults.bool(forKey: migrationKey) else {
@@ -81,7 +86,8 @@ enum AppGroupDefaults {
             "linearBarHidden",
             "circularRingMode",
             "circularRingHidden",
-            "watchArtworkLayout"
+            "watchArtworkLayout",
+            "watchBackgroundStyle"
         ]
 
         for key in keys {
@@ -235,6 +241,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var circularRingMode: String = "chapter"
     var circularRingHidden: Bool = false
     var watchArtworkLayout: String = "immersive"
+    var watchBackgroundStyle: String = "artwork"
 
     let availableSpeeds: [Double] = [1.0, 1.25, 1.5, 2.0]
     var currentSpeedIndex: Int = 0
@@ -286,6 +293,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
         circularRingMode = AppGroupDefaults.circularRingMode
         circularRingHidden = AppGroupDefaults.circularRingHidden
         watchArtworkLayout = AppGroupDefaults.watchArtworkLayout
+        watchBackgroundStyle = AppGroupDefaults.watchBackgroundStyle
     }
 
     private func parseSlots(_ raw: String) -> [WatchAction] {
@@ -458,6 +466,10 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             if let watchArtworkLayout = state["watchArtworkLayout"] as? String {
                 self.watchArtworkLayout = watchArtworkLayout
                 AppGroupDefaults.watchArtworkLayout = watchArtworkLayout
+            }
+            if let watchBackgroundStyle = state["watchBackgroundStyle"] as? String {
+                self.watchBackgroundStyle = watchBackgroundStyle
+                AppGroupDefaults.watchBackgroundStyle = watchBackgroundStyle
             }
             if let thumbnailData = state["thumbnailData"] as? Data {
                 self.defaults.set(thumbnailData, forKey: "thumbnailData")
@@ -897,26 +909,39 @@ struct ContentView: View {
         WatchArtworkLayout(rawValue: viewModel.watchArtworkLayout) ?? .immersive
     }
 
+    private var backgroundStyle: WatchBackgroundStyle {
+        WatchBackgroundStyle(rawValue: viewModel.watchBackgroundStyle) ?? .artwork
+    }
+
     @ViewBuilder
     private var artworkBackground: some View {
-        if let image = viewModel.thumbnailImage {
+        if artworkLayout == .classic && backgroundStyle == .black {
+            Color.black.ignoresSafeArea()
+        } else if let image = viewModel.thumbnailImage {
             switch artworkLayout {
             case .immersive:
-                ZStack {
-                    Color.black
+                GeometryReader { proxy in
+                    let availableSide = min(proxy.size.width, proxy.size.height)
+                    let blurredSide = availableSide * 0.94
+                    let artworkSide = availableSide * 0.72
 
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 236, height: 236)
-                        .blur(radius: 10)
-                        .opacity(0.30)
+                    ZStack {
+                        Color.black
 
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 206, height: 206)
-                        .opacity(0.58)
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: blurredSide, height: blurredSide)
+                            .blur(radius: 10)
+                            .opacity(0.30)
+
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: artworkSide, height: artworkSide)
+                            .opacity(0.58)
+                    }
+                    .frame(width: proxy.size.width, height: proxy.size.height)
                 }
                 .overlay(Color.black.opacity(0.30))
                 .overlay(artworkScrim)
@@ -952,6 +977,24 @@ private enum WatchArtworkLayout: String {
     case classic
 }
 
+private enum WatchBackgroundStyle: String {
+    case artwork
+    case black
+}
+
+private struct WatchControlBackground<S: Shape>: View {
+    let shape: S
+
+    var body: some View {
+        shape
+            .fill(Color.black.opacity(0.52))
+            .background(.ultraThinMaterial, in: shape)
+            .overlay {
+                shape.stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+            }
+    }
+}
+
 // MARK: - Player Page (per-page layout matching the blueprint)
 //
 // Layout invariants:
@@ -968,6 +1011,10 @@ private struct PlayerPage: View {
     let onBookmark: () -> Void
     let onSleepTimer: () -> Void
 
+    private var isCompactLayout: Bool { layout == .classic }
+    private var topControlInset: CGFloat { isCompactLayout ? 8 : 10 }
+    private var topControlSize: CGFloat { isCompactLayout ? 40 : 42 }
+
     var body: some View {
         ZStack {
             if layout == .classic {
@@ -978,20 +1025,10 @@ private struct PlayerPage: View {
 
                     titleView
 
-                    progressBar
+                    Spacer(minLength: 10)
 
-                    Spacer(minLength: 12)
-
-                    TransportRow(
-                        leftSlot: slots[2],
-                        centerSlot: slots[3],
-                        rightSlot: slots[4],
-                        viewModel: viewModel,
-                        usesImmersiveChrome: true,
-                        onBookmark: onBookmark,
-                        onSleepTimer: onSleepTimer
-                    )
-                    .padding(.bottom, 8)
+                    bottomControls(isCompactLayout: false)
+                        .padding(.bottom, 8)
                 }
             }
             
@@ -1001,20 +1038,22 @@ private struct PlayerPage: View {
                     TopSlotButton(
                         action: slots[0],
                         viewModel: viewModel,
-                        usesImmersiveChrome: layout == .immersive,
+                        usesImmersiveChrome: true,
+                        controlSize: topControlSize,
                         onBookmark: onBookmark,
                         onSleepTimer: onSleepTimer
                     )
-                        .padding(.leading, 8)
+                        .padding(.leading, topControlInset)
                     Spacer()
                     TopSlotButton(
                         action: slots[1],
                         viewModel: viewModel,
-                        usesImmersiveChrome: layout == .immersive,
+                        usesImmersiveChrome: true,
+                        controlSize: topControlSize,
                         onBookmark: onBookmark,
                         onSleepTimer: onSleepTimer
                     )
-                        .padding(.trailing, 8)
+                        .padding(.trailing, topControlInset)
                 }
                 .padding(.top, 8)
                 Spacer()
@@ -1034,6 +1073,12 @@ private struct PlayerPage: View {
                 .truncationMode(.tail)
                 .padding(.horizontal)
 
+            bottomControls(isCompactLayout: true)
+        }
+    }
+
+    private func bottomControls(isCompactLayout: Bool) -> some View {
+        VStack(spacing: 0) {
             progressBar
 
             TransportRow(
@@ -1041,11 +1086,11 @@ private struct PlayerPage: View {
                 centerSlot: slots[3],
                 rightSlot: slots[4],
                 viewModel: viewModel,
-                usesImmersiveChrome: false,
+                usesImmersiveChrome: true,
+                isCompactLayout: isCompactLayout,
                 onBookmark: onBookmark,
                 onSleepTimer: onSleepTimer
             )
-            .padding(.top, 6)
         }
     }
 
@@ -1111,8 +1156,13 @@ private struct TopSlotButton: View {
     let action: WatchAction
     let viewModel: WatchViewModel
     let usesImmersiveChrome: Bool
+    let controlSize: CGFloat
     let onBookmark: () -> Void
     let onSleepTimer: () -> Void
+
+    private var iconSize: CGFloat { controlSize <= 40 ? 21 : 23 }
+    private var speedFontSize: CGFloat { controlSize <= 40 ? 13 : 14 }
+    private var countdownOffset: CGFloat { controlSize <= 40 ? 14 : 16 }
 
     var body: some View {
         if action == .empty {
@@ -1131,37 +1181,37 @@ private struct TopSlotButton: View {
                     if action == .loopMode && viewModel.loopMode == "bookmark" {
                         ZStack {
                             Image(systemName: "arrow.trianglehead.clockwise")
-                                .font(.system(size: 24))
+                                .font(.system(size: iconSize))
                             Image(systemName: "bookmark.fill")
                                 .font(.system(size: 8, weight: .bold))
                         }
                     } else if action == .speed {
                         Text(formatSpeed(viewModel.playbackSpeed))
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: speedFontSize, weight: .semibold, design: .rounded))
                             .monospacedDigit()
                     } else if action == .sleepTimer {
                         ZStack {
                             Image(systemName: viewModel.isSleepTimerActive ? "moon.zzz.fill" : "moon.zzz")
-                                .font(.system(size: 22, weight: .semibold))
+                                .font(.system(size: iconSize, weight: .semibold))
                                 .foregroundStyle(viewModel.isSleepTimerActive ? Color.accentColor : Color.white)
                             if viewModel.sleepTimerMode == "minutes" && viewModel.sleepTimerRemainingSeconds > 0 {
                                 Text(sleepCountdownText(viewModel.sleepTimerRemainingSeconds))
                                     .font(.system(size: 9, weight: .bold, design: .rounded))
                                     .foregroundStyle(Color.accentColor)
                                     .monospacedDigit()
-                                    .offset(y: 16)
+                                    .offset(y: countdownOffset)
                             }
                         }
                     } else {
                         Image(systemName: iconName)
-                            .font(.system(size: 24))
+                            .font(.system(size: iconSize))
                     }
                 }
                 .foregroundStyle(.white)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(width: controlSize, height: controlSize)
                 .background {
                     if usesImmersiveChrome {
-                        Circle().fill(.ultraThinMaterial)
+                        WatchControlBackground(shape: Circle())
                     }
                 }
                 .contentShape(Rectangle())
@@ -1302,25 +1352,33 @@ private struct TransportRow: View {
     let rightSlot: WatchAction
     let viewModel: WatchViewModel
     let usesImmersiveChrome: Bool
+    let isCompactLayout: Bool
     let onBookmark: () -> Void
     let onSleepTimer: () -> Void
 
+    private var sideButtonSize: CGFloat { isCompactLayout ? 38 : 42 }
+    private var centerButtonSize: CGFloat { isCompactLayout ? 40 : 42 }
+    private var ringSize: CGFloat { isCompactLayout ? 48 : 52 }
+    private var rowSpacing: CGFloat { isCompactLayout ? 10 : 20 }
+    private var innerHorizontalPadding: CGFloat { isCompactLayout ? 6 : 10 }
+    private var outerHorizontalPadding: CGFloat { isCompactLayout ? 12 : 0 }
+
     var body: some View {
-        HStack(spacing: 20) {
-            SideTransportButton(action: leftSlot, viewModel: viewModel, usesImmersiveChrome: usesImmersiveChrome, onBookmark: onBookmark, onSleepTimer: onSleepTimer)
+        HStack(spacing: usesImmersiveChrome ? rowSpacing : 20) {
+            SideTransportButton(action: leftSlot, viewModel: viewModel, usesImmersiveChrome: usesImmersiveChrome, controlSize: sideButtonSize, onBookmark: onBookmark, onSleepTimer: onSleepTimer)
 
-            CenterTransportButton(action: centerSlot, viewModel: viewModel, onBookmark: onBookmark, onSleepTimer: onSleepTimer)
+            CenterTransportButton(action: centerSlot, viewModel: viewModel, controlSize: centerButtonSize, ringSize: ringSize, onBookmark: onBookmark, onSleepTimer: onSleepTimer)
 
-            SideTransportButton(action: rightSlot, viewModel: viewModel, usesImmersiveChrome: usesImmersiveChrome, onBookmark: onBookmark, onSleepTimer: onSleepTimer)
+            SideTransportButton(action: rightSlot, viewModel: viewModel, usesImmersiveChrome: usesImmersiveChrome, controlSize: sideButtonSize, onBookmark: onBookmark, onSleepTimer: onSleepTimer)
         }
-        .padding(.horizontal, usesImmersiveChrome ? 10 : 0)
+        .padding(.horizontal, usesImmersiveChrome ? innerHorizontalPadding : 0)
         .padding(.vertical, usesImmersiveChrome ? 6 : 0)
         .background {
             if usesImmersiveChrome {
-                Capsule().fill(.ultraThinMaterial)
+                WatchControlBackground(shape: Capsule())
             }
         }
-        .padding(.horizontal, usesImmersiveChrome ? 10 : 0)
+        .padding(.horizontal, usesImmersiveChrome ? outerHorizontalPadding : 0)
     }
 }
 
@@ -1328,8 +1386,13 @@ private struct SideTransportButton: View {
     let action: WatchAction
     let viewModel: WatchViewModel
     let usesImmersiveChrome: Bool
+    let controlSize: CGFloat
     let onBookmark: () -> Void
     let onSleepTimer: () -> Void
+
+    private var iconSize: CGFloat { controlSize <= 38 ? 18 : 20 }
+    private var speedFontSize: CGFloat { controlSize <= 38 ? 12 : 14 }
+    private var countdownOffset: CGFloat { controlSize <= 38 ? 12 : 14 }
 
     var body: some View {
         Button {
@@ -1345,33 +1408,33 @@ private struct SideTransportButton: View {
                 if action == .loopMode && viewModel.loopMode == "bookmark" {
                     ZStack {
                         Image(systemName: "arrow.trianglehead.clockwise")
-                            .font(.system(size: 20))
+                            .font(.system(size: iconSize))
                         Image(systemName: "bookmark.fill")
                             .font(.system(size: 7, weight: .bold))
                     }
                 } else if action == .speed {
                     Text(formatSpeed(viewModel.playbackSpeed))
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: speedFontSize, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                 } else if action == .sleepTimer {
                     ZStack {
                         Image(systemName: viewModel.isSleepTimerActive ? "moon.zzz.fill" : "moon.zzz")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: iconSize, weight: .semibold))
                             .foregroundStyle(viewModel.isSleepTimerActive ? Color.accentColor : Color.white)
                         if viewModel.sleepTimerMode == "minutes" && viewModel.sleepTimerRemainingSeconds > 0 {
                             Text(sleepCountdownText(viewModel.sleepTimerRemainingSeconds))
                                 .font(.system(size: 9, weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.accentColor)
                                 .monospacedDigit()
-                                .offset(y: 14)
+                                .offset(y: countdownOffset)
                         }
                     }
                 } else {
                     Image(systemName: sideIconName)
-                        .font(.system(size: 20))
+                        .font(.system(size: iconSize))
                 }
             }
-            .frame(width: usesImmersiveChrome ? 44 : 38, height: usesImmersiveChrome ? 44 : 38)
+            .frame(width: usesImmersiveChrome ? controlSize : 38, height: usesImmersiveChrome ? controlSize : 38)
             .padding(usesImmersiveChrome ? 0 : 15)
             .contentShape(Rectangle())
             .opacity(action == .empty ? 0.35 : 1.0)
@@ -1379,7 +1442,7 @@ private struct SideTransportButton: View {
         .transportButtonStyle(usesImmersiveChrome: usesImmersiveChrome)
         .background {
             if usesImmersiveChrome {
-                Circle().fill(.ultraThinMaterial)
+                WatchControlBackground(shape: Circle())
             }
         }
         .disabled(action == .empty)
@@ -1436,8 +1499,12 @@ private extension View {
 private struct CenterTransportButton: View {
     let action: WatchAction
     let viewModel: WatchViewModel
+    let controlSize: CGFloat
+    let ringSize: CGFloat
     let onBookmark: () -> Void
     let onSleepTimer: () -> Void
+
+    private var iconSize: CGFloat { controlSize <= 40 ? 20 : 22 }
 
     var body: some View {
         ZStack {
@@ -1451,12 +1518,12 @@ private struct CenterTransportButton: View {
                     : viewModel.progressAnimationSuppressed
                 Circle()
                     .stroke(Color.white.opacity(0.2), lineWidth: 4)
-                    .frame(width: 52, height: 52)
+                    .frame(width: ringSize, height: ringSize)
 
                 Circle()
                     .trim(from: 0, to: ringProgress)
                     .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 52, height: 52)
+                    .frame(width: ringSize, height: ringSize)
                     .rotationEffect(.degrees(-90))
                     .animation(ringSuppressed ? nil : .linear(duration: 0.5), value: ringProgress)
             }
@@ -1471,9 +1538,11 @@ private struct CenterTransportButton: View {
                 }
             } label: {
                 Image(systemName: centerIconName)
-                    .font(.system(size: 22))
-                    .frame(width: 44, height: 44)
-                    .background(.ultraThinMaterial)
+                    .font(.system(size: iconSize))
+                    .frame(width: controlSize, height: controlSize)
+                    .background {
+                        WatchControlBackground(shape: Circle())
+                    }
                     .clipShape(Circle())
             }
             .buttonStyle(PlainButtonStyle())

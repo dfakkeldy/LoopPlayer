@@ -206,17 +206,40 @@ struct WatchAppSettingsView: View {
 
                 // MARK: Artwork Layout
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Artwork Layout")
+                    Text("Watch Appearance")
                         .font(.title3)
                         .foregroundStyle(.secondary)
 
-                    Picker("Artwork Layout", selection: $settings.watchArtworkLayout) {
-                        Label("Full Face", systemImage: "rectangle.expand.vertical").tag("immersive")
-                        Label("Thumbnail", systemImage: "photo").tag("classic")
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: settings.watchArtworkLayout) { _, _ in
-                        model.syncToWatch()
+                    VStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Face Style")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Picker("Face Style", selection: $settings.watchArtworkLayout) {
+                                Label("Full Face", systemImage: "rectangle.expand.vertical").tag("immersive")
+                                Label("Classic", systemImage: "photo").tag("classic")
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: settings.watchArtworkLayout) { _, _ in
+                                model.syncToWatch()
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Classic Background")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Picker("Classic Background", selection: $settings.watchBackgroundStyle) {
+                                Text("Blurred").tag("artwork")
+                                Text("Black").tag("black")
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: settings.watchBackgroundStyle) { _, _ in
+                                model.syncToWatch()
+                            }
+                        }
                     }
                     .padding()
                     .background(
@@ -240,6 +263,7 @@ struct WatchAppSettingsView: View {
 
                         WatchPreviewCanvas(
                             slots: selectedPage == 0 ? $page1Slots : $page2Slots,
+                            backgroundStyle: settings.watchBackgroundStyle,
                             onChange: saveSlots
                         )
                     }
@@ -349,6 +373,7 @@ private struct PaletteItem: View {
 // vertically centered and a 3-button transport row at the bottom.
 private struct WatchPreviewCanvas: View {
     @Binding var slots: [DesignerWatchAction]
+    let backgroundStyle: String
     var onChange: () -> Void
 
     var body: some View {
@@ -360,6 +385,13 @@ private struct WatchPreviewCanvas: View {
                     RoundedRectangle(cornerRadius: 44, style: .continuous)
                         .fill(Color.black)
                 )
+
+            if backgroundStyle == "artwork" {
+                AppIconThumbnail(size: 190)
+                    .blur(radius: 22)
+                    .opacity(0.35)
+                    .clipShape(RoundedRectangle(cornerRadius: 44, style: .continuous))
+            }
 
             VStack(spacing: 8) {
                 // Artwork (real app icon)
@@ -374,11 +406,15 @@ private struct WatchPreviewCanvas: View {
                     .padding(.horizontal, 8)
 
                 HStack(spacing: 8) {
-                    DropSlot(slot: $slots[2], shape: .squircle, onChange: onChange)
+                    DropSlot(slot: $slots[2], shape: .circle, onChange: onChange)
                     DropSlot(slot: $slots[3], shape: .circle,   onChange: onChange)
-                    DropSlot(slot: $slots[4], shape: .squircle, onChange: onChange)
+                    DropSlot(slot: $slots[4], shape: .circle, onChange: onChange)
                 }
                 .padding(.top, 2)
+                .padding(.vertical, 4)
+                .background {
+                    DesignerControlBackground(shape: Capsule())
+                }
             }
             .padding(.bottom, 14)
 
@@ -401,6 +437,19 @@ private struct WatchPreviewCanvas: View {
 }
 
 // MARK: - Drop slot
+
+private struct DesignerControlBackground<S: Shape>: View {
+    let shape: S
+
+    var body: some View {
+        shape
+            .fill(Color.black.opacity(0.52))
+            .background(.ultraThinMaterial, in: shape)
+            .overlay {
+                shape.stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+            }
+    }
+}
 
 private struct DropSlot: View {
     enum SlotShape { case squircle, circle, topGlyph }
@@ -451,8 +500,8 @@ private struct DropSlot: View {
     private var width: CGFloat {
         switch shape {
         case .squircle: return 46
-        case .circle:   return 50
-        case .topGlyph: return 28
+        case .circle:   return 44
+        case .topGlyph: return 36
         }
     }
     private var height: CGFloat { width }
@@ -461,7 +510,6 @@ private struct DropSlot: View {
     private var background: some View {
         let isEmpty = slot == .empty
         let dashed = StrokeStyle(lineWidth: 2, dash: [5, 5])
-        let solidColor = Color.white.opacity(isTargeted ? 0.6 : 0.25)
         let dashColor = Color.gray.opacity(isTargeted ? 0.9 : 0.7)
 
         switch shape {
@@ -470,24 +518,14 @@ private struct DropSlot: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(dashColor, style: dashed)
             } else {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(solidColor, lineWidth: 1)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.white.opacity(0.12))
-                    )
+                DesignerControlBackground(shape: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         case .circle:
             if isEmpty {
                 Circle()
                     .stroke(dashColor, style: dashed)
             } else {
-                Circle()
-                    .stroke(solidColor, lineWidth: 1)
-                    .background(
-                        Circle()
-                            .fill(Color.white.opacity(0.12))
-                    )
+                DesignerControlBackground(shape: Circle())
             }
         case .topGlyph:
             // Always show a placeholder outline in the designer so slots [0]
@@ -497,8 +535,7 @@ private struct DropSlot: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .stroke(dashColor, style: dashed)
             } else {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(Color.white.opacity(isTargeted ? 0.6 : 0.0), lineWidth: 1)
+                DesignerControlBackground(shape: Circle())
             }
         }
     }
