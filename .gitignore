@@ -4,7 +4,8 @@
 .LSOverride
 Icon?
 ._*
-
+#Fastlane api
+fastlane/api_key.json
 # --- Xcode: User-specific ---
 xcuserdata/
 *.xcuserstate
@@ -59,3 +60,7 @@ out2.txt
 __pycache__/
 .venv/
 *.pyc
+
+# Local ruby dependencies
+.bundle/
+vendor/bundle/

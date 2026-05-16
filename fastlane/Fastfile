@@ -1,1 +1,99 @@
-# Fastlane configuration
+# ── Orbit Audiobooks Fastlane Configuration ────────────────────────
+
+default_platform(:ios)
+
+# ── Helpers ────────────────────────────────────────────────────────
+
+# Returns true if the given scheme name exists in the project.
+def scheme_exists?(scheme_name)
+  output = sh(
+    "xcodebuild -project 'Orbit Audiobooks.xcodeproj' -list -json",
+    log: false
+  )
+  JSON.parse(output)["project"]["schemes"].include?(scheme_name)
+rescue
+  false
+end
+
+# ── Platforms & Lanes ──────────────────────────────────────────────
+
+platform :ios do
+  
+  before_all do
+    # Load the App Store Connect API key from your local git-ignored JSON file.
+    # On CI, ensure these variables are mapped via env vars.
+    @api_key = app_store_connect_api_key(key_filepath: "fastlane/api_key.json")
+  end
+
+  desc <<~DESC
+    Archive and upload to TestFlight.
+
+    This lane:
+    1. Syncs code signing via match (appstore) for all bundle IDs
+    2. Archives the iOS target (includes bundled watchOS app + widget)
+    3. Archives the macOS target (if a macOS scheme exists)
+    4. Uploads all resulting .ipa / .pkg files to TestFlight
+
+    Prerequisites:
+    - fastlane match set up with a git repo and MATCH_PASSWORD
+    - App Store Connect API key JSON at fastlane/api_key.json
+  DESC
+  lane :beta do
+
+    # ── iOS Code Signing ─────────────────────────────
+    # Syncs certificates and profiles for main app, watch app, and widget extension
+    sync_code_signing(
+      api_key: @api_key,
+      type: "appstore",
+      app_identifier: [
+        "com.orbit.audiobooks",                   # main iOS app
+        "com.orbit.audiobooks.watchkitapp",         # bundled watchOS app
+        "com.orbit.audiobooks.watchkitapp.widget"   # widget extension
+      ],
+      readonly: is_ci
+    )
+
+    # ── macOS Code Signing ───────────────────────────
+    sync_code_signing(
+      api_key: @api_key,
+      type: "appstore",
+      app_identifier: ["com.orbit.audiobooks.macos"],
+      readonly: is_ci
+    )
+
+    # ── Build iOS + watchOS ──────────────────────────
+    # Note: Xcode automatically embeds the watch app and widget inside the iOS wrapper
+    build_app(
+      project: "Orbit Audiobooks.xcodeproj",
+      scheme: "Orbit Audiobooks",
+      export_method: "app-store",
+      output_directory: "build"
+    )
+
+    # ── Build macOS (if scheme exists) ───────────────
+    # Wrapped in a rescue so a macOS failure doesn't block the iOS upload
+    if scheme_exists?("Orbit Audiobooks macOS")
+      begin
+        build_app(
+          project: "Orbit Audiobooks.xcodeproj",
+          scheme: "Orbit Audiobooks macOS",
+          export_method: "app-store",
+          output_directory: "build"
+        )
+      rescue => e
+        UI.error("macOS build failed: #{e.message}")
+        UI.error("iOS .ipa will still be uploaded. Fix the macOS target and re-run.")
+      end
+    else
+      UI.important("No macOS scheme found — skipping macOS build. Create 'Orbit Audiobooks macOS' scheme in Xcode to include it.")
+    end
+
+    # ── Upload to TestFlight ─────────────────────────
+    # This will automatically pick up and upload both the iOS (.ipa) and macOS (.pkg/.ipa) binaries found in the build directory
+    upload_to_testflight(
+      api_key: @api_key,
+      skip_waiting_for_build_processing: false,
+      notify_external_testers: false
+    )
+  end
+end

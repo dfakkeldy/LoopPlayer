@@ -1,1 +1,15 @@
-app_identifier("com.orbit.audiobooks")
+app_identifier("com.orbit.audiobooks") # Your main bundle ID
+
+apple_id("dfakkeldy@gmail.com") # Your Apple ID email
+
+team_id("8AXNA5B37R") # Put your real Team ID here
+
+# Since you have macOS and watchOS extensions, you can explicitly add them too:
+for_lane :beta do
+  app_identifier([
+    "com.orbit.audiobooks",
+    "com.orbit.audiobooks.watchkitapp",
+    "com.orbit.audiobooks.watchkitapp.widget",
+    "com.orbit.audiobooks.macos"
+  ])
+end
