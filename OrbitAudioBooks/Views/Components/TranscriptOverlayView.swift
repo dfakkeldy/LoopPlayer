@@ -20,19 +20,33 @@ struct TranscriptOverlayView<Content: View>: View {
 
             if storeManager.hasUnlockedPro, !player.transcription.isEmpty {
                 VStack(spacing: 0) {
-                    if isExpanded {
+                    // Always-visible header with mode picker and expand/collapse button.
+                    HStack {
                         Picker("Display", selection: $displayMode) {
                             ForEach(TranscriptDisplayMode.allCases, id: \.self) { mode in
                                 Text(mode.rawValue).tag(mode)
                             }
                         }
                         .pickerStyle(.segmented)
-                        .padding(.horizontal, 12)
-                        .padding(.top, 8)
+                        .labelsHidden()
+
+                        Spacer()
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isExpanded.toggle()
+                            }
+                        } label: {
+                            Image(systemName: isExpanded ? "chevron.down" : "chevron.up")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
 
                     displayContent
-                        .frame(maxHeight: isExpanded ? .infinity : 160)
+                        .frame(maxHeight: isExpanded ? .infinity : 130)
                 }
                 .background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
