@@ -8,19 +8,12 @@ struct GlobalTranscriptIndex: Codable {
     let segments: [TranscriptionSegment]
 }
 
-/// A word and its occurrence count, used for word cloud rendering.
-struct MacWordFrequency: Codable, Hashable, Identifiable {
-    var id: String { word }
-    let word: String
-    let count: Int
-}
-
 @MainActor
 class TranscriptStore: ObservableObject {
     @Published var transcriptions: [String: [TranscriptionSegment]] = [:]
     @Published var fileMapping: [String: String] = [:] // Hash -> Title
     /// Per-hash word frequencies for the full transcript, computed on load.
-    @Published var wordClouds: [String: [MacWordFrequency]] = [:]
+    @Published var wordClouds: [String: [WordFrequency]] = [:]
 
     private let transcriptDir: URL
     private var transcriptUpdateObserver: NSObjectProtocol?
@@ -54,7 +47,7 @@ class TranscriptStore: ObservableObject {
 #endif
 
         var newTranscriptions: [String: [TranscriptionSegment]] = [:]
-        var newWordClouds: [String: [MacWordFrequency]] = [:]
+        var newWordClouds: [String: [WordFrequency]] = [:]
         for file in files where file.pathExtension == "json" {
             let stem = file.deletingPathExtension().lastPathComponent
             // Skip word_frequencies sidecar files — loaded alongside their transcript.
@@ -70,7 +63,7 @@ class TranscriptStore: ObservableObject {
                 // Prefer pre-computed word_frequencies.json sidecar.
                 let freqSidecar = transcriptDir.appendingPathComponent("\(hash).transcript.word_frequencies.json")
                 if let freqData = try? Data(contentsOf: freqSidecar),
-                   let freq = try? JSONDecoder().decode([MacWordFrequency].self, from: freqData) {
+                   let freq = try? JSONDecoder().decode([WordFrequency].self, from: freqData) {
                     newWordClouds[hash] = freq
                 } else {
                     newWordClouds[hash] = Self.computeWordFrequencies(from: segments)
@@ -112,7 +105,7 @@ class TranscriptStore: ObservableObject {
     // MARK: - Word frequencies
 
     /// Computes word frequencies from transcription segments with stop-word filtering.
-    static func computeWordFrequencies(from segments: [TranscriptionSegment]) -> [MacWordFrequency] {
+    static func computeWordFrequencies(from segments: [TranscriptionSegment]) -> [WordFrequency] {
         var counts: [String: Int] = [:]
         let combined = segments.map(\.text).joined(separator: " ")
 
@@ -126,7 +119,7 @@ class TranscriptStore: ObservableObject {
         }
 
         return counts
-            .map { MacWordFrequency(word: $0.key, count: $0.value) }
+            .map { WordFrequency(word: $0.key, count: $0.value) }
             .sorted { $0.count > $1.count }
     }
 

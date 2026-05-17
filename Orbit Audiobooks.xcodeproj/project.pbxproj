@@ -184,6 +184,11 @@
 			path = "Orbit Audiobooks Watch AppUITests";
 			sourceTree = "<group>";
 		};
+		DD0100000000000000000001 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,6 +257,7 @@
 				CCC48EB42FA6AB340003458B /* Orbit Audiobooks Watch AppUITests */,
 				CC00BC532FA6B66400323F38 /* Orbit Audiobooks Widget */,
 				AA0100000000000000000010 /* Orbit Audiobooks macOS */,
+				DD0100000000000000000001 /* Shared */,
 				CC00BC4E2FA6B66400323F38 /* Frameworks */,
 				CC08EC5A2F9522F600206D2F /* Products */,
 			);
@@ -288,6 +294,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AA0100000000000000000010 /* Orbit Audiobooks macOS */,
+				DD0100000000000000000001 /* Shared */,
 			);
 			name = "Orbit Audiobooks macOS";
 			productName = "Orbit Audiobooks macOS";
@@ -306,6 +313,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				CC00BC532FA6B66400323F38 /* Orbit Audiobooks Widget */,
+				DD0100000000000000000001 /* Shared */,
 			);
 			name = "Orbit Audiobooks WidgetExtension";
 			productName = "Orbit Audiobooks WidgetExtension";
@@ -328,6 +336,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				CC08EC5B2F9522F600206D2F /* OrbitAudioBooks */,
+				DD0100000000000000000001 /* Shared */,
 			);
 			name = "Orbit Audiobooks";
 			productName = "Orbit Audiobooks";
@@ -392,6 +401,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				CCC48E9C2FA6AB330003458B /* Orbit Audiobooks Watch App */,
+				DD0100000000000000000001 /* Shared */,
 			);
 			name = "Orbit Audiobooks Watch App";
 			productName = "Orbit Audiobooks Watch App";

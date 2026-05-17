@@ -1,20 +1,6 @@
 import WidgetKit
 import AppIntents
 
-enum AppGroupDefaults {
-    static let suiteName = "group.com.orbitaudiobooks"
-
-    static var shared: UserDefaults {
-        guard let defaults = UserDefaults(suiteName: suiteName) else {
-#if DEBUG
-            assertionFailure("Unable to open app-group UserDefaults suite: \(suiteName)")
-#endif
-            return .standard
-        }
-        return defaults
-    }
-}
-
 struct TogglePlaybackIntent: AppIntent {
     static var title: LocalizedStringResource = "Toggle Playback"
     static var openAppWhenRun: Bool = true

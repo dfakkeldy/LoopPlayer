@@ -1,5 +1,7 @@
 import Foundation
 
+/// Actions available for Watch remote control and iOS settings configuration.
+/// Shared across iOS, watchOS, macOS, and Widget targets.
 enum WatchAction: String, Codable, CaseIterable, Identifiable {
     case playPause
     case skipForward
@@ -29,6 +31,7 @@ enum WatchAction: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// Command string sent over WatchConnectivity. Unused on iOS/macOS.
     var command: String {
         switch self {
         case .playPause:     return "toggle"

@@ -30,7 +30,7 @@ struct TranscriptPane: View {
         return segments.filter { $0.text.localizedCaseInsensitiveContains(searchText) }
     }
 
-    var wordCloud: [MacWordFrequency] {
+    var wordCloud: [WordFrequency] {
         transcriptStore.wordClouds[currentHash] ?? []
     }
 

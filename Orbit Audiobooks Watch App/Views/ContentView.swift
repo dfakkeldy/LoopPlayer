@@ -5,52 +5,6 @@ import WatchKit
 import Observation
 import WidgetKit
 
-enum AppGroupDefaults {
-    static let suiteName = "group.com.orbitaudiobooks"
-    private static let migrationKey = "didMigrateWidgetDefaultsToAppGroup"
-
-    static var shared: UserDefaults {
-        guard let defaults = UserDefaults(suiteName: suiteName) else {
-            #if DEBUG
-            assertionFailure("Unable to open app-group UserDefaults suite: \(suiteName)")
-            #endif
-            return .standard
-        }
-        return defaults
-    }
-
-    static func migrateStandardDefaultsIfNeeded() {
-        guard let groupedDefaults = UserDefaults(suiteName: suiteName),
-              !groupedDefaults.bool(forKey: migrationKey) else {
-            return
-        }
-
-        let keys = [
-            "isPlaying",
-            "title",
-            "progressFraction",
-            "loopMode",
-            "currentTime",
-            "playbackSpeed",
-            "bookmarkStorageKey",
-            "folderKey",
-            "trackId",
-            "totalBookDuration",
-            "thumbnailData"
-        ]
-
-        for key in keys {
-            guard groupedDefaults.object(forKey: key) == nil,
-                  let value = UserDefaults.standard.object(forKey: key) else {
-                continue
-            }
-            groupedDefaults.set(value, forKey: key)
-        }
-
-        groupedDefaults.set(true, forKey: migrationKey)
-    }
-}
-
 // MARK: - Content View
 
 struct ContentView: View {

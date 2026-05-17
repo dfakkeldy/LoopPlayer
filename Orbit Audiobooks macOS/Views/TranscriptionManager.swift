@@ -4,12 +4,6 @@ import CryptoKit
 import AppKit
 import UniformTypeIdentifiers
 
-struct TranscriptionSegment: Codable {
-    let text: String
-    let startTime: TimeInterval
-    let endTime: TimeInterval
-}
-
 struct TranscriptionLogEntry: Identifiable, Equatable {
     enum Kind: String {
         case status
@@ -30,7 +24,7 @@ private enum TranscriptionCLIEvent: Codable {
     case status(message: String)
     case progress(Double)
     case segment(TranscriptionSegment)
-    case wordFrequencies(words: [MacWordFrequency])
+    case wordFrequencies(words: [WordFrequency])
     case completed(outputPath: String, segmentCount: Int, wordFrequencyPath: String?)
     case error(message: String)
 
@@ -66,7 +60,7 @@ private enum TranscriptionCLIEvent: Codable {
         case .segment:
             self = .segment(try container.decode(TranscriptionSegment.self, forKey: .segment))
         case .wordFrequencies:
-            self = .wordFrequencies(words: try container.decode([MacWordFrequency].self, forKey: .words))
+            self = .wordFrequencies(words: try container.decode([WordFrequency].self, forKey: .words))
         case .completed:
             self = .completed(
                 outputPath: try container.decode(String.self, forKey: .outputPath),
@@ -113,7 +107,7 @@ class TranscriptionManager: ObservableObject {
     @Published var status: String = ""
     @Published var liveLogStream: [TranscriptionLogEntry] = []
     @Published var liveSegments: [TranscriptionSegment] = []
-    @Published var liveWordCloud: [MacWordFrequency] = []
+    @Published var liveWordCloud: [WordFrequency] = []
 
     private var currentProcess: Process?
     private var completedTranscriptURL: URL?
@@ -287,9 +281,9 @@ class TranscriptionManager: ObservableObject {
     }
 
     /// Loads word frequencies from a JSON file on disk.
-    private func loadWordFrequenciesFromDisk(_ url: URL) -> [MacWordFrequency]? {
+    private func loadWordFrequenciesFromDisk(_ url: URL) -> [WordFrequency]? {
         guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? JSONDecoder().decode([MacWordFrequency].self, from: data)
+        return try? JSONDecoder().decode([WordFrequency].self, from: data)
     }
 
     // MARK: - Binary resolution
@@ -372,7 +366,7 @@ class TranscriptionManager: ObservableObject {
             appendLog(.progress, "\(Int(progress * 100))%")
         case .segment(let segment):
             liveSegments.append(segment)
-            appendLog(.segment, "\(formatTimestamp(segment.startTime)) \(segment.text)")
+            appendLog(.segment, "\(formatHMS(segment.startTime)) \(segment.text)")
         case .wordFrequencies(let words):
             liveWordCloud = words
             appendLog(.status, "Received \(words.count) word frequencies")
@@ -394,13 +388,4 @@ class TranscriptionManager: ObservableObject {
         liveLogStream.append(TranscriptionLogEntry(kind: kind, message: message))
     }
 
-    private func formatTimestamp(_ seconds: TimeInterval) -> String {
-        let total = max(0, Int(seconds.rounded(.down)))
-        let h = total / 3600
-        let m = (total % 3600) / 60
-        let s = total % 60
-        return h > 0
-            ? String(format: "%d:%02d:%02d", h, m, s)
-            : String(format: "%d:%02d", m, s)
-    }
 }

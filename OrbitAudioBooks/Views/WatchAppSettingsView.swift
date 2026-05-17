@@ -2,48 +2,16 @@ import SwiftUI
 import UniformTypeIdentifiers
 import UIKit
 
-/// The action enum mirrors the watch's WatchAction (kept inline so the iOS
-/// target doesn't need to import the Watch target).
-enum DesignerWatchAction: String, Codable, CaseIterable, Identifiable {
-    case playPause
-    case skipForward
-    case skipBackward
-    case nextTrack
-    case previousTrack
-    case loopMode
-    case speed
-    case sleepTimer
-    case bookmark
-    case empty
-
-    var id: String { rawValue }
-
-    var iconName: String {
-        switch self {
-        case .playPause:     return "playpause.fill"
-        case .skipForward:   return "goforward.30"
-        case .skipBackward:  return "gobackward.30"
-        case .nextTrack:     return "forward.end.fill"
-        case .previousTrack: return "backward.end.fill"
-        case .loopMode:      return "infinity"
-        case .speed:         return "gauge.medium"
-        case .sleepTimer:    return "moon.zzz.fill"
-        case .bookmark:      return "bookmark.fill"
-        case .empty:         return "plus"
-        }
-    }
-}
-
 struct WatchAppSettingsView: View {
     @Environment(PlayerModel.self) private var model
     @Environment(SettingsManager.self) private var settings
     @Environment(\.dismiss) private var dismiss
 
-    @State private var page1Slots: [DesignerWatchAction] = Array(repeating: .empty, count: 5)
-    @State private var page2Slots: [DesignerWatchAction] = Array(repeating: .empty, count: 5)
+    @State private var page1Slots: [WatchAction] = Array(repeating: .empty, count: 5)
+    @State private var page2Slots: [WatchAction] = Array(repeating: .empty, count: 5)
     @State private var selectedPage: Int = 0
 
-    private let palette: [DesignerWatchAction] = [
+    private let palette: [WatchAction] = [
         .playPause, .skipForward, .skipBackward, .nextTrack,
         .previousTrack, .loopMode, .speed, .sleepTimer, .bookmark
     ]
@@ -330,11 +298,11 @@ struct WatchAppSettingsView: View {
         model.syncToWatch()
     }
 
-    private func parse(_ raw: String) -> [DesignerWatchAction] {
-        raw.split(separator: ",").compactMap { DesignerWatchAction(rawValue: String($0)) }
+    private func parse(_ raw: String) -> [WatchAction] {
+        raw.split(separator: ",").compactMap { WatchAction(rawValue: String($0)) }
     }
 
-    private func padded(_ s: [DesignerWatchAction]) -> [DesignerWatchAction] {
+    private func padded(_ s: [WatchAction]) -> [WatchAction] {
         var out = s
         while out.count < 5 { out.append(.empty) }
         return Array(out.prefix(5))
@@ -343,7 +311,7 @@ struct WatchAppSettingsView: View {
 
 // A draggable palette chip showing the action icon + label.
 private struct PaletteItem: View {
-    let action: DesignerWatchAction
+    let action: WatchAction
 
     var body: some View {
         VStack(spacing: 6) {
@@ -372,7 +340,7 @@ private struct PaletteItem: View {
 // slots are anchored to the very top, with the artwork-and-title block
 // vertically centered and a 3-button transport row at the bottom.
 private struct WatchPreviewCanvas: View {
-    @Binding var slots: [DesignerWatchAction]
+    @Binding var slots: [WatchAction]
     let backgroundStyle: String
     var onChange: () -> Void
 
@@ -454,7 +422,7 @@ private struct DesignerControlBackground<S: Shape>: View {
 private struct DropSlot: View {
     enum SlotShape { case squircle, circle, topGlyph }
 
-    @Binding var slot: DesignerWatchAction
+    @Binding var slot: WatchAction
     let shape: SlotShape
     var onChange: () -> Void
 
@@ -478,7 +446,7 @@ private struct DropSlot: View {
             guard let provider = providers.first else { return false }
             provider.loadObject(ofClass: NSString.self) { string, _ in
                 if let raw = string as? String,
-                   let action = DesignerWatchAction(rawValue: raw) {
+                   let action = WatchAction(rawValue: raw) {
                     DispatchQueue.main.async {
                         slot = action
                         onChange()

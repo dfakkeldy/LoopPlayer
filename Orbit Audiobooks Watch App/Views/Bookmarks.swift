@@ -51,7 +51,7 @@ private struct WatchBookmarkRow: View {
                 Text(bookmark.title)
                     .font(.system(.body, design: .rounded))
                     .lineLimit(1)
-                Text(formatTimestamp(bookmark.timestamp))
+                Text(formatHMS(bookmark.timestamp))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -99,14 +99,4 @@ private struct WatchBookmarkRow: View {
         }
     }
 
-    private func formatTimestamp(_ seconds: TimeInterval) -> String {
-        let total = max(0, Int(seconds.rounded(.down)))
-        let h = total / 3600
-        let m = (total % 3600) / 60
-        let s = total % 60
-        if h > 0 {
-            return String(format: "%d:%02d:%02d", h, m, s)
-        }
-        return String(format: "%d:%02d", m, s)
-    }
 }
