@@ -1,0 +1,46 @@
+import Foundation
+
+enum WatchAction: String, Codable, CaseIterable, Identifiable {
+    case playPause
+    case skipForward
+    case skipBackward
+    case nextTrack
+    case previousTrack
+    case loopMode
+    case speed
+    case sleepTimer
+    case bookmark
+    case empty
+
+    var id: String { rawValue }
+
+    var iconName: String {
+        switch self {
+        case .playPause:     return "playpause.fill"
+        case .skipForward:   return "goforward.30"
+        case .skipBackward:  return "gobackward.30"
+        case .nextTrack:     return "forward.end.fill"
+        case .previousTrack: return "backward.end.fill"
+        case .loopMode:      return "infinity"
+        case .speed:         return "gauge.medium"
+        case .sleepTimer:    return "moon.zzz.fill"
+        case .bookmark:      return "bookmark.fill"
+        case .empty:         return "plus"
+        }
+    }
+
+    var command: String {
+        switch self {
+        case .playPause:     return "toggle"
+        case .skipForward:   return "skipForward"
+        case .skipBackward:  return "skipBackward"
+        case .nextTrack:     return "next"
+        case .previousTrack: return "previous"
+        case .loopMode:      return "cycleLoopMode"
+        case .speed:         return "cycleSpeed"
+        case .sleepTimer:    return "toggleSleepTimer"
+        case .bookmark:      return "addBookmark"
+        case .empty:         return ""
+        }
+    }
+}
