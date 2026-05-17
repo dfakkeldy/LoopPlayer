@@ -20,8 +20,8 @@ final class MockSettingsManager: SettingsManagerProtocol {
     var crownAction: String = "volume"
     var crownVolumeSensitivity: Double = 0.05
     var crownScrubSensitivity: Double = 0.5
-    var watchPage1: String = "empty,empty,skipBackward,playPause,skipForward"
-    var watchPage2: String = "loopMode,empty,speed,sleepTimer,bookmark"
+    var watchPage1: [WatchAction] = [.empty, .empty, .skipBackward, .playPause, .skipForward]
+    var watchPage2: [WatchAction] = [.loopMode, .empty, .speed, .sleepTimer, .bookmark]
     var linearBarMode: String = "total"
     var linearBarHidden: Bool = false
     var circularRingMode: String = "chapter"

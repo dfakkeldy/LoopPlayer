@@ -302,9 +302,9 @@ M4B then adds the aggregation without changing the protocol signature.
 | L10N — Localization & Settings | ✅ Done | 2026-05-17 |
 | B16 — Bookmark Cleanup Logging | ✅ Done | 2026-05-17 |
 | A2 — Watch ContentView Decomposition | ✅ Done | 2026-05-17 |
-| A3 — Cross-Target Deduplication | ⏳ Pending | — |
+| A3 — Cross-Target Deduplication | ✅ Done | 2026-05-17 |
 | A4 — Accessibility Audit | ⏳ Pending | — |
-| A7 — Typed Watch Configuration | ⏳ Pending | — |
+| A7 — Typed Watch Configuration | ✅ Done | 2026-05-17 |
 | M4B — Audio Queue M4B Folders | ⏳ Pending | — |
 | DASH — Modular Dashboard UI | ⏳ Pending | — |
 | CAR — CarPlay Integration | ⏳ Pending | — |

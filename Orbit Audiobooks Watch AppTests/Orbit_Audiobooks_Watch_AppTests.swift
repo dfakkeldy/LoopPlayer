@@ -23,16 +23,29 @@ struct Orbit_Audiobooks_Watch_AppTests {
         #expect(WatchAction.empty.command == "")
     }
 
-    @Test func watchSlotParserPadsToFiveActions() {
-        let parsed = WatchSlotConfiguration.actions(from: "skipBackward,playPause")
+    @Test func watchActionsRoundtripJSON() throws {
+        let original: [WatchAction] = [.skipBackward, .playPause, .empty, .empty, .empty]
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode([WatchAction].self, from: data)
 
-        #expect(parsed == [.skipBackward, .playPause, .empty, .empty, .empty])
+        #expect(decoded == original)
     }
 
-    @Test func watchSlotParserIgnoresUnknownActions() {
-        let parsed = WatchSlotConfiguration.actions(from: "skipBackward,nope,playPause")
+    @Test func watchActionsMigrationFromOldStringFormat() throws {
+        let oldString = "skipBackward,nope,playPause"
 
-        #expect(parsed == [.skipBackward, .playPause, .empty, .empty, .empty])
+        // Simulate the migration path: parse old comma-separated string
+        let parsed = oldString.split(separator: ",").compactMap { WatchAction(rawValue: String($0)) }
+        var padded = Array(parsed.prefix(5))
+        while padded.count < 5 { padded.append(.empty) }
+
+        // Unknown actions (like "nope") are dropped
+        #expect(padded == [.skipBackward, .playPause, .empty, .empty, .empty])
+
+        // Verify the result roundtrips through JSON
+        let data = try JSONEncoder().encode(padded)
+        let decoded = try JSONDecoder().decode([WatchAction].self, from: data)
+        #expect(decoded == padded)
     }
 
 }

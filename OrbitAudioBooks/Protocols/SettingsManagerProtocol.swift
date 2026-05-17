@@ -22,8 +22,8 @@ protocol SettingsManagerProtocol: AnyObject {
     var crownAction: String { get set }
     var crownVolumeSensitivity: Double { get set }
     var crownScrubSensitivity: Double { get set }
-    var watchPage1: String { get set }
-    var watchPage2: String { get set }
+    var watchPage1: [WatchAction] { get set }
+    var watchPage2: [WatchAction] { get set }
     var linearBarMode: String { get set }
     var linearBarHidden: Bool { get set }
     var circularRingMode: String { get set }

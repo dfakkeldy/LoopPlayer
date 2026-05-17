@@ -7,8 +7,8 @@ struct WatchAppSettingsView: View {
     @Environment(SettingsManager.self) private var settings
     @Environment(\.dismiss) private var dismiss
 
-    @State private var page1Slots: [WatchAction] = Array(repeating: .empty, count: 5)
-    @State private var page2Slots: [WatchAction] = Array(repeating: .empty, count: 5)
+    @State private var page1Slots: [WatchAction] = []
+    @State private var page2Slots: [WatchAction] = []
     @State private var selectedPage: Int = 0
 
     private let palette: [WatchAction] = [
@@ -288,18 +288,14 @@ struct WatchAppSettingsView: View {
     }
 
     private func loadSlots() {
-        page1Slots = padded(parse(settings.watchPage1))
-        page2Slots = padded(parse(settings.watchPage2))
+        page1Slots = padded(settings.watchPage1)
+        page2Slots = padded(settings.watchPage2)
     }
 
     private func saveSlots() {
-        settings.watchPage1 = page1Slots.map { $0.rawValue }.joined(separator: ",")
-        settings.watchPage2 = page2Slots.map { $0.rawValue }.joined(separator: ",")
+        settings.watchPage1 = page1Slots
+        settings.watchPage2 = page2Slots
         model.syncToWatch()
-    }
-
-    private func parse(_ raw: String) -> [WatchAction] {
-        raw.split(separator: ",").compactMap { WatchAction(rawValue: String($0)) }
     }
 
     private func padded(_ s: [WatchAction]) -> [WatchAction] {

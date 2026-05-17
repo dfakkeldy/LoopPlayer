@@ -151,10 +151,18 @@ class WatchViewModel: NSObject, WCSessionDelegate {
             thumbnailImage = image
         }
 
-        if let raw = defaults.string(forKey: "watchPage1") {
+        if let data = defaults.data(forKey: "watchPage1"),
+           let decoded = try? JSONDecoder().decode([WatchAction].self, from: data) {
+            page1Slots = padded(decoded)
+        } else if let raw = defaults.string(forKey: "watchPage1") {
+            // Migration from old comma-separated format
             page1Slots = padded(parseSlots(raw))
         }
-        if let raw = defaults.string(forKey: "watchPage2") {
+        if let data = defaults.data(forKey: "watchPage2"),
+           let decoded = try? JSONDecoder().decode([WatchAction].self, from: data) {
+            page2Slots = padded(decoded)
+        } else if let raw = defaults.string(forKey: "watchPage2") {
+            // Migration from old comma-separated format
             page2Slots = padded(parseSlots(raw))
         }
 
@@ -167,11 +175,13 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     }
 
     private func parseSlots(_ raw: String) -> [WatchAction] {
-        WatchSlotConfiguration.actions(from: raw)
+        raw.split(separator: ",").compactMap { WatchAction(rawValue: String($0)) }
     }
 
     private func padded(_ slots: [WatchAction]) -> [WatchAction] {
-        WatchSlotConfiguration.padded(slots)
+        var out = Array(slots.prefix(5))
+        while out.count < 5 { out.append(.empty) }
+        return out
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
@@ -309,13 +319,15 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 self.currentSpeedIndex = idx
                 self.defaults.set(playbackSpeed, forKey: "playbackSpeed")
             }
-            if let watchPage1 = state["watchPage1"] as? String {
-                self.page1Slots = self.padded(self.parseSlots(watchPage1))
-                self.defaults.set(watchPage1, forKey: "watchPage1")
+            if let watchPage1Data = state["watchPage1"] as? Data,
+               let decoded = try? JSONDecoder().decode([WatchAction].self, from: watchPage1Data) {
+                self.page1Slots = self.padded(decoded)
+                self.defaults.set(watchPage1Data, forKey: "watchPage1")
             }
-            if let watchPage2 = state["watchPage2"] as? String {
-                self.page2Slots = self.padded(self.parseSlots(watchPage2))
-                self.defaults.set(watchPage2, forKey: "watchPage2")
+            if let watchPage2Data = state["watchPage2"] as? Data,
+               let decoded = try? JSONDecoder().decode([WatchAction].self, from: watchPage2Data) {
+                self.page2Slots = self.padded(decoded)
+                self.defaults.set(watchPage2Data, forKey: "watchPage2")
             }
             if let linearBarMode = state["linearBarMode"] as? String {
                 self.linearBarMode = linearBarMode

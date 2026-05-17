@@ -477,8 +477,8 @@ final class PlayerModel {
         context["loopMode"] = loopMode.rawValue
         context["playbackSpeed"] = Double(speed)
         
-        context["watchPage1"] = settings?.watchPage1 ?? SettingsManager.Defaults.watchPage1
-        context["watchPage2"] = settings?.watchPage2 ?? SettingsManager.Defaults.watchPage2
+        context["watchPage1"] = (try? JSONEncoder().encode(settings?.watchPage1 ?? SettingsManager.Defaults.watchPage1)) ?? Data()
+        context["watchPage2"] = (try? JSONEncoder().encode(settings?.watchPage2 ?? SettingsManager.Defaults.watchPage2)) ?? Data()
         context["linearBarMode"] = settings?.linearBarMode ?? SettingsManager.Defaults.linearBarMode
         context["linearBarHidden"] = settings?.linearBarHidden ?? SettingsManager.Defaults.linearBarHidden
         context["circularRingMode"] = settings?.circularRingMode ?? SettingsManager.Defaults.circularRingMode

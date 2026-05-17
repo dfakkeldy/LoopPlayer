@@ -22,8 +22,8 @@ final class SettingsManager: SettingsManagerProtocol {
         static let crownAction = "volume"
         static let crownVolumeSensitivity = 0.05
         static let crownScrubSensitivity = 0.5
-        static let watchPage1 = "empty,empty,skipBackward,playPause,skipForward"
-        static let watchPage2 = "loopMode,empty,speed,sleepTimer,bookmark"
+        static let watchPage1: [WatchAction] = [.empty, .empty, .skipBackward, .playPause, .skipForward]
+        static let watchPage2: [WatchAction] = [.loopMode, .empty, .speed, .sleepTimer, .bookmark]
         static let linearBarMode = "total"
         static let linearBarHidden = false
         static let circularRingMode = "chapter"
@@ -97,8 +97,8 @@ final class SettingsManager: SettingsManagerProtocol {
     var crownAction: String { didSet { appGroupSet(crownAction, forKey: Keys.crownAction) } }
     var crownVolumeSensitivity: Double { didSet { defaults.set(crownVolumeSensitivity, forKey: Keys.crownVolumeSensitivity) } }
     var crownScrubSensitivity: Double { didSet { defaults.set(crownScrubSensitivity, forKey: Keys.crownScrubSensitivity) } }
-    var watchPage1: String { didSet { appGroupSet(watchPage1, forKey: Keys.watchPage1) } }
-    var watchPage2: String { didSet { appGroupSet(watchPage2, forKey: Keys.watchPage2) } }
+    var watchPage1: [WatchAction] { didSet { appGroupSet(try? JSONEncoder().encode(watchPage1), forKey: Keys.watchPage1) } }
+    var watchPage2: [WatchAction] { didSet { appGroupSet(try? JSONEncoder().encode(watchPage2), forKey: Keys.watchPage2) } }
     var linearBarMode: String { didSet { appGroupSet(linearBarMode, forKey: Keys.linearBarMode) } }
     var linearBarHidden: Bool { didSet { appGroupSet(linearBarHidden, forKey: Keys.linearBarHidden) } }
     var circularRingMode: String { didSet { appGroupSet(circularRingMode, forKey: Keys.circularRingMode) } }
@@ -178,8 +178,8 @@ final class SettingsManager: SettingsManagerProtocol {
         crownAction = appGroupDefaults.string(forKey: Keys.crownAction) ?? Defaults.crownAction
         crownVolumeSensitivity = defaults.double(forKey: Keys.crownVolumeSensitivity)
         crownScrubSensitivity = defaults.double(forKey: Keys.crownScrubSensitivity)
-        watchPage1 = appGroupDefaults.string(forKey: Keys.watchPage1) ?? Defaults.watchPage1
-        watchPage2 = appGroupDefaults.string(forKey: Keys.watchPage2) ?? Defaults.watchPage2
+        watchPage1 = Self.decodeWatchPage(key: Keys.watchPage1, from: appGroupDefaults, fallback: Defaults.watchPage1)
+        watchPage2 = Self.decodeWatchPage(key: Keys.watchPage2, from: appGroupDefaults, fallback: Defaults.watchPage2)
         linearBarMode = appGroupDefaults.string(forKey: Keys.linearBarMode) ?? Defaults.linearBarMode
         linearBarHidden = appGroupDefaults.bool(forKey: Keys.linearBarHidden)
         circularRingMode = appGroupDefaults.string(forKey: Keys.circularRingMode) ?? Defaults.circularRingMode
@@ -220,8 +220,8 @@ final class SettingsManager: SettingsManagerProtocol {
         ])
         appGroupDefaults.register(defaults: [
             Keys.crownAction: Defaults.crownAction,
-            Keys.watchPage1: Defaults.watchPage1,
-            Keys.watchPage2: Defaults.watchPage2,
+            Keys.watchPage1: (try? JSONEncoder().encode(Defaults.watchPage1)) ?? Data(),
+            Keys.watchPage2: (try? JSONEncoder().encode(Defaults.watchPage2)) ?? Data(),
             Keys.linearBarMode: Defaults.linearBarMode,
             Keys.linearBarHidden: Defaults.linearBarHidden,
             Keys.circularRingMode: Defaults.circularRingMode,
@@ -231,6 +231,26 @@ final class SettingsManager: SettingsManagerProtocol {
             Keys.isHapticFeedbackEnabled: Defaults.isHapticFeedbackEnabled,
             Keys.watchQuickBookmarkTimeoutSeconds: Defaults.watchQuickBookmarkTimeoutSeconds
         ])
+    }
+
+    /// Decodes `[WatchAction]` from JSON. Falls back to the old comma-separated
+    /// string format for transparent one-time migration.
+    private static func decodeWatchPage(key: String, from defaults: UserDefaults, fallback: [WatchAction]) -> [WatchAction] {
+        if let data = defaults.data(forKey: key),
+           let decoded = try? JSONDecoder().decode([WatchAction].self, from: data) {
+            return decoded
+        }
+        // Migration from old comma-separated string format
+        if let oldString = defaults.string(forKey: key) {
+            let parsed = oldString.split(separator: ",").compactMap { WatchAction(rawValue: String($0)) }
+            var padded = Array(parsed.prefix(5))
+            while padded.count < 5 { padded.append(.empty) }
+            if let encoded = try? JSONEncoder().encode(padded) {
+                defaults.set(encoded, forKey: key)
+            }
+            return padded
+        }
+        return fallback
     }
 
     static func normalizedAppFont(_ appFont: String) -> String {
