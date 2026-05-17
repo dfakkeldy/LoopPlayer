@@ -154,6 +154,18 @@ struct WatchWordFrequency: Identifiable, Codable, Hashable {
 
 // MARK: - View Model
 
+/// Mutable playback state captured before an optimistic local update.
+/// If the iPhone doesn't confirm within 3 seconds or reports an error,
+/// the view model rolls back to this snapshot.
+struct PlaybackSnapshot {
+    var isPlaying: Bool
+    var loopMode: String
+    var currentSpeedIndex: Int
+    var sleepTimerMode: String
+    var sleepTimerMinutes: Int
+    var sleepTimerRemainingSeconds: Int
+}
+
 @Observable
 class WatchViewModel: NSObject, WCSessionDelegate {
     /// Local cache of bookmarks created from the watch this session. Used to
@@ -210,6 +222,52 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     var playbackSpeed: Double { availableSpeeds[currentSpeedIndex] }
 
     @ObservationIgnored private let defaults = AppGroupDefaults.shared
+
+    // MARK: Optimistic update rollback
+
+    @ObservationIgnored private var pendingSnapshot: PlaybackSnapshot?
+    @ObservationIgnored private var rollbackTimer: Timer?
+
+    func prepareOptimisticUpdate() {
+        rollbackTimer?.invalidate()
+        pendingSnapshot = PlaybackSnapshot(
+            isPlaying: isPlaying,
+            loopMode: loopMode,
+            currentSpeedIndex: currentSpeedIndex,
+            sleepTimerMode: sleepTimerMode,
+            sleepTimerMinutes: sleepTimerMinutes,
+            sleepTimerRemainingSeconds: sleepTimerRemainingSeconds
+        )
+    }
+
+    private func rollback() {
+        guard let snapshot = pendingSnapshot else { return }
+        isPlaying = snapshot.isPlaying
+        loopMode = snapshot.loopMode
+        currentSpeedIndex = snapshot.currentSpeedIndex
+        sleepTimerMode = snapshot.sleepTimerMode
+        sleepTimerMinutes = snapshot.sleepTimerMinutes
+        sleepTimerRemainingSeconds = snapshot.sleepTimerRemainingSeconds
+        pendingSnapshot = nil
+        rollbackTimer?.invalidate()
+        rollbackTimer = nil
+    }
+
+    private func clearPendingRollback() {
+        pendingSnapshot = nil
+        rollbackTimer?.invalidate()
+        rollbackTimer = nil
+    }
+
+    private func scheduleRollback() {
+        rollbackTimer?.invalidate()
+        rollbackTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.rollback()
+                self?.requestCurrentState()
+            }
+        }
+    }
 
     override init() {
         super.init()
@@ -492,6 +550,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 }
             }
             session.sendMessage(message, replyHandler: { [weak self] reply in
+                self?.clearPendingRollback()
                 self?.applyState(reply)
                 if Self.isDirectionalCommand(command),
                    self?.loopMode == "bookmark",
@@ -500,12 +559,17 @@ class WatchViewModel: NSObject, WCSessionDelegate {
                 }
             }, errorHandler: { [weak self] error in
                 print("Error sending command: \(error)")
+                self?.rollback()
                 self?.requestCurrentState()
             })
             didSend = true
+            if pendingSnapshot != nil {
+                scheduleRollback()
+            }
         }
 
         guard didSend else {
+            rollback()
             requestCurrentState()
             return false
         }
@@ -530,19 +594,28 @@ class WatchViewModel: NSObject, WCSessionDelegate {
         return true
     }
 
-    /// Trigger the action for a tapped slot, with local state echoes for
-    /// playPause / loopMode so the UI feels instant.
+    /// Trigger the action for a tapped slot, with optimistic local state
+    /// updates so the UI feels instant. A snapshot is captured before each
+    /// mutation; if the iPhone doesn't confirm within 3 seconds or reports
+    /// an error, the view model rolls back to the snapshot.
     func handle(_ action: WatchAction) {
         switch action {
         case .empty:
             return
         case .playPause:
-            if sendCommand(isPlaying ? "pause" : "play") {
-                isPlaying.toggle()
-            }
+            prepareOptimisticUpdate()
+            isPlaying.toggle()
+            sendCommand(isPlaying ? "pause" : "play")
         case .loopMode:
+            prepareOptimisticUpdate()
+            let modes = ["off", "track", "bookmark"]
+            let currentIndex = modes.firstIndex(of: loopMode) ?? 0
+            let next = modes[(currentIndex + 1) % modes.count]
+            loopMode = next
+            defaults.set(next, forKey: "loopMode")
             sendCommand("cycleLoopMode")
         case .speed:
+            prepareOptimisticUpdate()
             cycleSpeed()
         default:
             sendCommand(action.command)
@@ -552,6 +625,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     // MARK: Sleep Timer (watch -> iPhone)
 
     func setSleepTimerMinutes(_ minutes: Int) {
+        prepareOptimisticUpdate()
         // Optimistic local state update for immediate UI feedback.
         sleepTimerMode = "minutes"
         sleepTimerMinutes = minutes
@@ -563,6 +637,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     }
 
     func setSleepTimerEndOfChapter() {
+        prepareOptimisticUpdate()
         sleepTimerMode = "endOfChapter"
         sleepTimerMinutes = 0
         sleepTimerRemainingSeconds = 0
@@ -572,6 +647,7 @@ class WatchViewModel: NSObject, WCSessionDelegate {
     }
 
     func cancelSleepTimer() {
+        prepareOptimisticUpdate()
         sleepTimerMode = "off"
         sleepTimerMinutes = 0
         sleepTimerRemainingSeconds = 0
@@ -1782,6 +1858,7 @@ private struct NewBookmarkView: View {
     }
 
     private func beginRecording() {
+        viewModel.prepareOptimisticUpdate()
         if viewModel.sendCommand("pause") {
             viewModel.isPlaying = false
         }
