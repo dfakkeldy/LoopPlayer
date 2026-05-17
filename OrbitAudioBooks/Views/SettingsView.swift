@@ -60,6 +60,13 @@ struct SettingsView: View {
                 } footer: {
                     Text("When enabled, voice memos attached to bookmarks are played automatically when the audiobook reaches that timestamp.")
                 }
+
+                Section {
+                    NavigationLink("Help") {
+                        HelpView()
+                            .navigationTitle("Help")
+                    }
+                }
             }
             .navigationTitle("Settings")
             .toolbar {
