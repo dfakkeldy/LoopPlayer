@@ -21,6 +21,11 @@
 | SQL | SQL Database Integration | Large | Feature |
 | PLIST | Playlist Packaging (Manifest + ZIP) | Medium | Feature |
 | BKMG | Bookmark Playlist Grouping | Small | Feature |
+| ASRS | Spaced Repetition Engine & Data Model | Medium | Feature |
+| AIR | Inline Active Recall (AudioEngine) | Large | Feature |
+| ADR | Daily Review UI | Medium | Feature |
+| AWG | WatchOS Hands-Free Review | Medium | Feature |
+| ADI | JSON Deck Import | Small | Feature |
 
 ---
 
@@ -48,6 +53,12 @@ CAR (CarPlay) ────── depends on: A1, A6, M4B ───────�
 SQL (Database) ───── depends on: A1 ─────────────────────────────────────────────┘
 PLIST (Playlist) ──── depends on: A1 (manifest in extracted Persistence) ─────────┘
 BKMG (Bookmark Grouping) ─ no dependencies, no dependents (self-contained UI change)
+
+ASRS (SRS Engine) ─────── no dependencies, self-contained data model + algorithm
+AIR (Inline Recall) ───── depends on: ASRS, A6
+ADR (Daily Review) ────── depends on: ASRS
+AWG (Watch Gestures) ──── depends on: ASRS, A2
+ADI (Deck Import) ─────── depends on: ASRS
 ```
 
 ---
@@ -86,6 +97,15 @@ These four have zero dependencies on each other and can be done in parallel (sep
 | 3.3 | **CAR — CarPlay Integration** | Builds on A1, A6, and M4B's aggregated chapters. |
 | 3.4 | **SQL — Database Integration** | After A1 extracts BookmarkStore; swap backend. |
 | 3.5 | **PLIST — Playlist Packaging** | After A1 extracts Persistence; manifest replaces UserDefaults keys. Parallel with SQL. |
+
+### Phase 4: Spaced Repetition (Anki)
+| Order | Plan | Reason |
+|-------|------|--------|
+| 4.0 | **ASRS — SRS Engine & Data Model** | Zero dependencies. Foundation for all Anki features. Can be done in Phase 0. |
+| 4.1 | **AIR — Inline Active Recall** | After A1 + A6. Needs clean AudioEngine API and extracted PlaybackController. |
+| 4.2 | **ADR — Daily Review UI** | After ASRS. Independent of main player — uses separate AVPlayer for snippets. |
+| 4.3 | **AWG — WatchOS Hands-Free Review** | After ASRS + A2. Adds to decomposed watch file structure. |
+| 4.4 | **ADI — JSON Deck Import** | After ASRS. Self-contained file import + parser. Can be done in parallel with any other Anki phase. |
 
 ---
 
@@ -129,6 +149,30 @@ protocol ChapterServiceProtocol {
 
 M4B then adds the aggregation without changing the protocol signature.
 
+### AIR + AudioEngine: Boundary Observer API
+
+**Problem:** AIR needs to add `scheduleFlashcardTriggers(_:)` to the audio engine. A6 already modified `AudioEngine` to add `setGain`/`fadeGain`. If AIR is built before A6, the gain methods won't exist. If built after A6, AIR adds a second new public method.
+
+**Resolution:** Do A6 first (it's small — two methods). AIR then adds `scheduleFlashcardTriggers` on top of the A6-cleaned API. Both methods extend the public API surface without conflicting.
+
+### AIR + A1: Flashcard State in PlayerModel
+
+**Problem:** AIR needs `activeInlineCard` and a grading handler on `PlayerModel`. If A1 extracts `PlaybackController` before AIR, the flashcard trigger/grade flow should live in the extracted controller, not PlayerModel.
+
+**Resolution:** Do AIR **after** A1. Add `activeInlineCard` and `scheduleFlashcardTriggers` to the extracted `PlaybackController`, not PlayerModel. The overlay view reads from `PlaybackController` via the existing Observation chain.
+
+### AWG + WatchViewModel: Adding Due Card Sync
+
+**Problem:** AWG adds ~4 new `WatchAction` cases and due card sync to `WatchViewModel`. If A2 is incomplete, the file structure isn't ready.
+
+**Resolution:** AWG depends on A2 being complete. The changes are additive — new `WatchAction` cases, new methods on `WatchViewModel`, a new `WatchReviewView`. No structural changes to existing watch code.
+
+### ADR + Main Player: Separate AVPlayer Instance
+
+**Problem:** ADR needs to play audio snippets while the user is reviewing cards. If it uses the main audio engine, it disrupts the user's current playback position.
+
+**Resolution:** ADR uses a **separate** `AVPlayer` instance for snippet playback. This avoids any conflict with the main `AudioEngine` or `PlayerModel`. The snippet player is created and torn down within `DailyReviewViewModel`.
+
 ### CAR + Watch: Dual Command Sources
 
 **Problem:** Both CarPlay and the Watch app send playback commands. If `PlayerModel` handles them from separate code paths, they can race.
@@ -147,22 +191,30 @@ M4B then adds the aggregation without changing the protocol signature.
 | CarPlay rejection from App Review | CAR, B12 | B12 removes the MPVolumeView hack (App Review risk). CAR adds legitimate CarPlay entitlements. |
 | Merge hell on PlayerModel | A1, M4B, DASH, CAR | Do A1 first. No exceptions. All feature work targets extracted components. |
 | Dutch localization quality | L10N | Use a native Dutch speaker for review. Machine translations are a starting point only. |
+| Audio glitch on inline card trigger | AIR | The pause/resume cycle around boundary observers must be tested with short/long M4B files. Pre-buffer resume point. |
+| Flashcard data loss during SQL migration | ASRS, SQL | FlashcardStore must be included in the SQL migration plan. Test with real Flashcard data before swapping backend. |
+| Watch sync failure for due cards | AWG | If WatchConnectivity fails, the watch should show a cached queue (last successful sync). Don't silently show "No cards due." |
+| Imported deck validation errors | ADI | Validate all cards in a deck before inserting any. Use a transaction-like pattern: parse fully, validate all, then insert in batch. |
 
 ---
 
 ## Parallelization Opportunities
 
 ### Can be done simultaneously (different worktrees, no shared files):
-- Phase 0: A5, L10N, B16, A6+B12 — all four at once
+- Phase 0: A5, L10N, B16, A6+B12, ASRS — all five at once
 - Phase 2: A2 + A3 + A7 — three at once (after B13 and A1)
 - Phase 3: M4B + DASH + SQL + PLIST — four at once (after A1 is done, they touch different extracted components)
+- Phase 4: ADR + ADI — two at once (after ASRS, no shared files)
 - Any time: BKMG — zero dependencies, single file, can be done in any phase
 
 ### Must be sequential:
 - A5 → A1 (protocols define boundaries for decomposition)
-- A1 → M4B, DASH, CAR, SQL (all depend on extracted components)
+- A1 → M4B, DASH, CAR, SQL, AIR (all depend on extracted components)
 - A2 → A3 (deduplication needs separated files first)
 - L10N → A4 (accessibility labels must be localized)
+- ASRS → AIR, ADR, AWG, ADI (all Anki features need the Flashcard model + SM-2 algorithm)
+- A6 → AIR (AIR adds boundary observers to A6-cleaned AudioEngine API)
+- A2 → AWG (watch gestures need decomposed watch structure)
 
 ---
 
@@ -227,15 +279,15 @@ M4B then adds the aggregation without changing the protocol signature.
 
 | Metric | Count |
 |--------|-------|
-| Total plans | 17 (16 files, A6+B12 combined) |
-| Independent (Phase 0) | 4 workstreams |
+| Total plans | 22 (21 files, A6+B12 combined) |
+| Independent (Phase 0) | 5 workstreams |
 | Bug fixes | 3 |
 | Architecture refactors | 7 |
-| Feature additions | 7 |
-| Plans touching PlayerModel | 9 |
-| Plans touching AudioEngine | 3 |
-| Maximum parallel workstreams | 4 (Phase 0) |
-| Sequential dependency chain (longest path) | A5 → A1 → M4B → CAR (4 steps) |
+| Feature additions | 12 |
+| Plans touching PlayerModel | 10 |
+| Plans touching AudioEngine | 4 |
+| Maximum parallel workstreams | 5 (Phase 0) |
+| Sequential dependency chain (longest path) | ASRS → AIR or A5 → A1 → M4B → CAR (4 steps) |
 | Plans revised after code review | A5 (protocol approach), A6 (reduced scope) |
 
 ## Completion Status (May 2026)
@@ -259,3 +311,8 @@ M4B then adds the aggregation without changing the protocol signature.
 | SQL — SQL Database Integration | ⏳ Pending | — |
 | PLIST — Playlist Packaging | ⏳ Pending | — |
 | BKMG — Bookmark Playlist Grouping | ✅ Done | 2026-05-17 |
+| ASRS — SRS Engine & Data Model | ⏳ Pending | — |
+| AIR — Inline Active Recall | ⏳ Pending | — |
+| ADR — Daily Review UI | ⏳ Pending | — |
+| AWG — WatchOS Hands-Free Review | ⏳ Pending | — |
+| ADI — JSON Deck Import | ⏳ Pending | — |

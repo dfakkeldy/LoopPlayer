@@ -206,3 +206,25 @@
 - Do not ship until Tasks 1, 2, 3, and 5 are complete.
 - Tasks 4, 6, and 7 must either be completed or product claims/metadata must be updated to remove those promises for the release.
 
+---
+
+## Post-Release: Spaced Repetition (Anki) Feature
+
+Five new plans add a complete spaced repetition flashcard system to Orbit Audiobooks. See `plan-cross-reference.md` for dependency details and execution order.
+
+| Phase | Plan | Description |
+|-------|------|-------------|
+| 4.0 | **ASRS** — `plan-anki-srs-engine.md` | Core SM-2 algorithm, `Flashcard` model, `SpacedRepetitionService`, `FlashcardStore` |
+| 4.1 | **AIR** — `plan-anki-inline-recall.md` | Inline flashcard pop-ups during playback via boundary time observers |
+| 4.2 | **ADR** — `plan-anki-daily-review.md` | Traditional Anki-style daily review UI with audio snippet playback |
+| 4.3 | **AWG** — `plan-anki-watchos-gestures.md` | Hands-free watch review using Double Tap gesture and haptics |
+| 4.4 | **ADI** — `plan-anki-deck-import.md` | JSON deck import via `.fileImporter` |
+
+**Key design decisions:**
+- ASRS has zero dependencies and can be built immediately (Phase 0)
+- AIR must wait for A1 (extracted `PlaybackController`) and A6 (`AudioEngine` gain API)
+- ADR uses a **separate `AVPlayer`** instance for snippet playback — never touches the main audio engine
+- AWG omits audio snippets on watch for MVP — text-only flashcard review
+- All Anki features use the existing `UserDefaults` + JSON persistence pattern (migrating to SQL later with Plan SQL)
+
+
